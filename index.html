@@ -1280,21 +1280,20 @@ function tryAddDiabDiag2(puzzle, usedGroups) {
   return puzzle;
 }
 
-function tryGenerateDiabolique(maxTries = 800) {
-  if (DIAB_RULES.length < 6) return null;
-  const MIN_C = 2, MAX_C = 4;
+function tryGenerateDiabolique(maxTries = 2000) {
+  if (DIAB_RULES.length < 7) return null;
+  const MIN_C = 2, MAX_C = 5;
   const idxArr = Array.from({length: DIAB_RULES.length}, (_, i) => i);
 
   for (let t = 0; t < maxTries; t++) {
-    // 1. Tirer 3 règles-lignes parmi DIAB_RULES
+    // 1. Tirer 3 règles-lignes
     const [ri0, ri1, ri2] = shuffle(idxArr);
     const rowRules = [DIAB_RULES[ri0], DIAB_RULES[ri1], DIAB_RULES[ri2]];
     const rowPools = [DIAB_POOLS[ri0], DIAB_POOLS[ri1], DIAB_POOLS[ri2]];
     const usedGroups = new Set(rowRules.map(r => r.g));
     if (usedGroups.size < 3) continue;
 
-    // 2. Pour chaque colonne, chercher greedy une règle qui donne 2-4 candidats
-    //    dans TOUTES les 3 cases de la colonne
+    // 2. Règles-colonnes avec 2-5 candidats bruts (row ∩ col)
     const colRules = [];
     let colOk = true;
     for (let col = 0; col < 3; col++) {
@@ -1316,20 +1315,32 @@ function tryGenerateDiabolique(maxTries = 800) {
     }
     if (!colOk) continue;
 
-    // 3. Compter les candidats par case
-    const counts = [];
-    for (let row = 0; row < 3; row++)
-      for (let col = 0; col < 3; col++)
-        counts.push(rowPools[row].filter(p => colRules[col].fn(p)).length);
+    // 3. Chercher une diagonale telle que row+col+diag → exactement 1 solution
+    //    C'est la diagonale qui CRÉE l'unicité (pas l'inverse)
+    const diagPool = shuffle(DIAB_RULES.filter(r => !usedGroups.has(r.g)));
+    for (const diagRule of diagPool) {
+      // Chaque case diagonale doit avoir ≥2 candidats après row+col+diag
+      let diagOk = true;
+      for (const idx of [0, 4, 8]) {
+        const row = Math.floor(idx/3), col = idx%3;
+        if (cellCandidates(rowRules[row], colRules[col], diagRule, null).length < 2) {
+          diagOk = false; break;
+        }
+      }
+      if (!diagOk) continue;
 
-    // 4. Vérifier l'unicité : exactement 1 combinaison de 9 pays valide
-    if (countSolutions(rowRules, colRules, null, null) !== 1) continue;
+      // Unicité avec la diagonale
+      if (countSolutions(rowRules, colRules, diagRule, null) !== 1) continue;
 
-    const base = { rowRules, colRules, diagRule: null, diagRule2: null, counts, isUnique: true };
-    // 5. Diagonale obligatoire — réduit les candidats et maintient l'unicité
-    //    (sans diag, l'unicité est déjà garantie ; la diag la renforce visuellement)
-    const withDiag = tryAddDiabDiag(base, usedGroups);
-    if (withDiag.diagRule) return withDiag;
+      // Counts réels (cases 0/4/8 avec diag, les autres sans)
+      const counts = Array.from({length: 9}, (_, idx) => {
+        const row = Math.floor(idx/3), col = idx%3;
+        const dr = (idx===0||idx===4||idx===8) ? diagRule : null;
+        return cellCandidates(rowRules[row], colRules[col], dr, null).length;
+      });
+
+      return { rowRules, colRules, diagRule, diagRule2: null, counts, isUnique: true };
+    }
   }
   return null;
 }
@@ -1337,7 +1348,7 @@ function tryGenerateDiabolique(maxTries = 800) {
 function generatePuzzle(diff='moyen') {
   if (diff === 'diabolique') {
     // Augmenter les essais pour trouver un vrai puzzle unique
-    const r = tryGenerateDiabolique(5000);
+    const r = tryGenerateDiabolique(2000);
     if (r) return r;
     // Fallback : puzzle difficile classique, sans contrainte d'unicité
     const fb = tryGenerate('difficile', 4, 9, 800) || tryGenerate('moyen', 8, 15, 400);
@@ -2458,8 +2469,9 @@ async function submitPseudo() {
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
   { v:'1.5', date:'29/05/2026', changes:[
-    'Diabolique : solution unique garantie (1 seule combinaison de 9 pays valide)',
-    'Diabolique : diagonale obligatoire, intersections serrées (max 4 candidats/case)',
+    'Diabolique : correction génération — diagonale toujours présente',
+    'Diabolique : c\'est la diagonale qui crée l\'unicité (row+col+diag → 1 seule solution)',
+    'Diabolique : toute erreur de placement rend la grille insoluble',
     'Scoring × difficulté : Facile ×0.7 → Diabolique ×3.0',
     'Bonus ligne complète, colonne complète et grille entière (×difficulté)',
     'Détail des bonus affiché dans le score de fin de partie',
