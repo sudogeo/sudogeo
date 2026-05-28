@@ -320,6 +320,55 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
 .zi-tag.classe  { color: #7dd3fc; background: rgba(56,189,248,0.12); }
 .zoo-item.used  { opacity: 0.35; }
 
+/* ── Leaderboard panel ───────────────────────────────────── */
+.lb-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:8px 12px 0; }
+.lb-tab  { padding:4px 10px; border-radius:12px; font-size:0.76em; font-weight:600;
+           cursor:pointer; border:1px solid rgba(255,255,255,0.15); color:#64748b;
+           background:rgba(255,255,255,0.05); transition:all 0.15s; }
+.lb-tab.active { border-color:#3b82f6; color:#93c5fd; background:rgba(59,130,246,0.15); }
+.lb-table { width:100%; border-collapse:collapse; font-size:0.83em; }
+.lb-table th { color:#475569; font-weight:600; padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; }
+.lb-table td { padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.04); color:#e2e8f0; }
+.lb-table tr:last-child td { border-bottom:none; }
+.lb-rank-1 { color:#fbbf24; font-weight:700; }
+.lb-rank-2 { color:#94a3b8; font-weight:700; }
+.lb-rank-3 { color:#b45309; font-weight:700; }
+.lb-empty  { text-align:center; color:#475569; padding:20px; font-size:0.82em; }
+
+/* ── Pseudo entry (inside victory overlay) ───────────────── */
+.pseudo-section { margin-top:14px; padding:12px; background:rgba(251,191,36,0.08);
+  border:1px solid rgba(251,191,36,0.3); border-radius:10px; }
+.pseudo-section p  { font-size:0.82em; color:#fde68a; margin-bottom:8px; }
+.pseudo-section input { width:100%; background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.25); border-radius:6px; color:#fff;
+  padding:7px 10px; font-size:0.85em; outline:none; margin-bottom:6px; }
+.pseudo-section input:focus { border-color:#fbbf24; }
+.pseudo-error  { font-size:0.72em; color:#ef9a9a; min-height:14px; margin-bottom:6px; }
+.btn-pseudo    { background:#fbbf24; color:#0c1a2e; font-weight:700;
+  padding:7px 16px; border:none; border-radius:7px; cursor:pointer; font-size:0.84em; }
+.btn-pseudo:hover { background:#f59e0b; }
+.btn-pseudo-skip { background:none; border:none; color:#64748b; font-size:0.75em;
+  cursor:pointer; margin-left:8px; }
+.btn-pseudo-skip:hover { color:#94a3b8; }
+
+/* ── Changelog ───────────────────────────────────────────── */
+.btn-changelog { position:fixed; bottom:10px; right:12px; background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#475569;
+  font-size:0.68em; padding:3px 9px; cursor:pointer; z-index:10; }
+.btn-changelog:hover { background:rgba(255,255,255,0.12); color:#94a3b8; }
+.cl-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+  z-index:400; align-items:flex-end; justify-content:flex-end; padding:16px; }
+.cl-overlay.show { display:flex; }
+.cl-panel { background:#0f1d2e; border:1px solid rgba(59,130,246,0.3);
+  border-radius:12px; max-width:360px; width:100%; max-height:70vh;
+  overflow-y:auto; padding:16px; box-shadow:0 8px 32px rgba(0,0,0,0.6); }
+.cl-panel h3 { font-size:0.9em; color:#60a5fa; margin-bottom:10px; }
+.cl-version { margin-bottom:12px; }
+.cl-version strong { font-size:0.8em; color:#fbbf24; }
+.cl-version span   { font-size:0.72em; color:#475569; margin-left:6px; }
+.cl-version ul     { margin-top:4px; padding-left:14px; }
+.cl-version li     { font-size:0.75em; color:#94a3b8; margin:2px 0; }
+
 @media (max-width: 620px) {
   body { padding: 10px 6px; }
   h1 { font-size: 1.55em; }
@@ -361,6 +410,7 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
 <div class="controls">
   <button class="btn-new"  onclick="newGame()">&#128260; Nouvelle grille</button>
   <button class="btn-hint" style="background:#1565c0" onclick="openZoo()">&#127758; Liste des pays</button>
+  <button class="btn-hint" style="background:#92400e" onclick="openLeaderboard()">&#127942; Classement</button>
 </div>
 <div class="controls controls-solver">
   <button class="btn-solver" id="btn-solve-cell" onclick="solveCell()" disabled>&#127919; Solver la case</button>
@@ -369,6 +419,26 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
 
 <div id="ac-drop"></div>
 <div id="wiki-tooltip"></div>
+
+<!-- Leaderboard overlay -->
+<div class="zoo-overlay" id="lb-overlay" onclick="if(event.target===this)closeLb()">
+  <div class="zoo-panel" style="max-width:520px">
+    <div class="zoo-head">
+      <h3>&#127942; Classement mondial</h3>
+      <button class="zoo-close" onclick="closeLb()">&#10005;</button>
+    </div>
+    <div class="lb-tabs" id="lb-tabs"></div>
+    <div style="padding:8px 4px;overflow-y:auto;flex:1" id="lb-content">
+      <p class="lb-empty">Chargement…</p>
+    </div>
+  </div>
+</div>
+
+<!-- Changelog -->
+<div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
+  <div class="cl-panel" id="cl-panel"></div>
+</div>
+<button class="btn-changelog" onclick="openCl()">v1.3 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -784,6 +854,24 @@ function buildDiabRules() {
   }
 }
 
+function tryAddDiabDiag(puzzle, usedGroups) {
+  for (const r of shuffle(DIAB_RULES)) {
+    if (usedGroups.has(r.g)) continue;
+    const newCounts = [...puzzle.counts];
+    let ok = true;
+    for (const idx of [0, 4, 8]) {
+      const row = Math.floor(idx/3), col = idx%3;
+      const n = cellCandidates(puzzle.rowRules[row], puzzle.colRules[col], r, null).length;
+      if (n < 2) { ok = false; break; }
+      newCounts[idx] = n;
+    }
+    if (!ok) continue;
+    if (countSolutions(puzzle.rowRules, puzzle.colRules, r, null) !== 1) continue;
+    return { ...puzzle, diagRule: r, counts: newCounts };
+  }
+  return puzzle;
+}
+
 function tryGenerateDiabolique(maxTries = 800) {
   if (DIAB_RULES.length < 6) return null;
   const MIN_C = 2, MAX_C = 6;
@@ -829,7 +917,9 @@ function tryGenerateDiabolique(maxTries = 800) {
     // 4. Vérifier l'unicité (rapide : 2-6 candidats/case max)
     if (countSolutions(rowRules, colRules, null, null) !== 1) continue;
 
-    return { rowRules, colRules, diagRule: null, diagRule2: null, counts };
+    const base = { rowRules, colRules, diagRule: null, diagRule2: null, counts };
+    // 5. Tenter d'ajouter une diagonale (50 % de chance, si ça reste unique et ≥ 2)
+    return Math.random() < 0.5 ? tryAddDiabDiag(base, usedGroups) : base;
   }
   return null;
 }
@@ -837,15 +927,14 @@ function tryGenerateDiabolique(maxTries = 800) {
 function generatePuzzle(diff='moyen') {
   if (diff === 'diabolique') {
     return tryGenerateDiabolique(800)
-        || tryGenerate('difficile', 1, 3, 800)
-        || tryGenerate('moyen', 3, 8, 400);
+        || tryGenerate('difficile', 4, 9, 600)
+        || tryGenerate('moyen', 8, 15, 400);
   }
   const { minMin, maxMin } = DIFF_CFG[diff] || DIFF_CFG.moyen;
-  const r1 = tryGenerate(diff, minMin, maxMin, 1000);
-  if (r1) return r1;
-  const r2 = tryGenerate(diff, minMin, Infinity, 800);
-  if (r2) return r2;
-  return tryGenerate(diff, 1, Infinity, 1200);
+  // Fallback progressif : respecte toujours au moins 60 % du seuil minimum
+  return tryGenerate(diff, minMin, maxMin, 1200)
+      || tryGenerate(diff, minMin, Infinity, 800)
+      || tryGenerate(diff, Math.max(1, Math.round(minMin * 0.6)), Infinity, 600);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -865,12 +954,12 @@ function normInput(str) {
 //   difficile : min 1–2
 //   avance    : min >= 1, + règle diagonale sur les cases 0, 4, 8
 const DIFF_CFG = {
-  facile:     { minMin: 8, maxMin: Infinity },
-  moyen:      { minMin: 3, maxMin: 8 },
-  difficile:  { minMin: 1, maxMin: 3 },
-  avance:     { minMin: 1, maxMin: Infinity },
-  expert2:    { minMin: 1, maxMin: Infinity },
-  diabolique: { minMin: 2, maxMin: Infinity }, // unique solution + ≥2 candidats/case
+  facile:     { minMin: 15, maxMin: Infinity }, // ≥15 réponses/case
+  moyen:      { minMin: 8,  maxMin: 15 },       // 8–14 réponses/case
+  difficile:  { minMin: 4,  maxMin: 9 },        // 4–8 réponses/case
+  avance:     { minMin: 2,  maxMin: 6 },        // 2–5 réponses/case
+  expert2:    { minMin: 1,  maxMin: 4 },        // 1–3 réponses/case
+  diabolique: { minMin: 2,  maxMin: 7 },        // unique solution, 2–6 réponses/case
 };
 let difficulty = 'moyen';
 
@@ -1133,8 +1222,8 @@ function validateCell(idx) {
   // Compter la partie dès le premier vrai essai
   if (!_currentGameCounted) {
     _currentGameCounted = true;
-    incStat('started');
-    renderStats();
+    incStat('started', difficulty);
+    renderStats(); renderPersonalBest();
     sbIncrementGlobal().then(renderGlobalCount);
   }
   const q = normInput(inp.value);
@@ -1365,14 +1454,15 @@ function checkVictory() {
       ${totalResetPenalty ? `<div class="score-row neg"><span>Pays retirés puis replacés</span><span>−${totalResetPenalty} pts</span></div>` : ''}
       ${botCells ? `<div class="score-row neg"><span>${botCells} case(s) résolue(s) par solver</span><span>0 pt</span></div>` : ''}
     </div>`;
-  incStat('completed');
+  incStat('completed', difficulty);
   renderStats();
   const isRecord = saveBest(difficulty, total);
   renderPersonalBest();
-  if (isRecord) {
+  if (isRecord)
     vs.insertAdjacentHTML('afterbegin', `<div class="new-record-badge">🏆 Nouveau record !</div>`);
-  }
   document.getElementById('victory').classList.add('show');
+  // Vérifier async si le score entre dans le top 5 mondial
+  if (total > 0) sbIsTop5(difficulty, total).then(ok => { if (ok) showPseudoForm(total, difficulty); });
 }
 
 // ─── Indice textuel (cycle sur les animaux valides) ────────
@@ -1718,6 +1808,54 @@ async function sbIncrementGlobal() {
   } catch { /* fail silencieux */ }
 }
 
+// ── Leaderboard Supabase ────────────────────────────────────
+async function sbGetTop5(diff) {
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/leaderboard?difficulty=eq.${diff}&order=score.desc&limit=5&select=pseudo,score,created_at`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } }
+    );
+    return await r.json();
+  } catch { return []; }
+}
+
+async function sbIsTop5(diff, score) {
+  const top = await sbGetTop5(diff);
+  return top.length < 5 || score > top[top.length - 1].score;
+}
+
+async function sbSubmitScore(diff, pseudo, score) {
+  await fetch(`${SB_URL}/rest/v1/leaderboard`, {
+    method: 'POST',
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`,
+                'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify({ difficulty: diff, pseudo: pseudo.trim(), score })
+  });
+}
+
+// ── Filtre pseudo ───────────────────────────────────────────
+const BAD_WORDS = ['nazi','hitler','hitler','bite','bites','couille','couilles',
+  'putain','connard','connards','salope','salopes','pute','putes','enculé','encule',
+  'fdp','ntm','pedophile','pedo','violeur','niquer','nique','baiser','penis','vagin',
+  'porn','fuck','shit','cunt','nigger','negro','pédé','pede','tapette',
+  'connasse','batard','bâtard','merde','chiotte'];
+
+function pseudoHasBadWord(text) {
+  const n = text.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  return BAD_WORDS.some(w => n.includes(
+    w.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')
+  ));
+}
+
+function validatePseudo(raw) {
+  const p = raw.trim();
+  if (p.length < 2)  return 'Minimum 2 caractères.';
+  if (p.length > 20) return 'Maximum 20 caractères.';
+  if (!/^[a-zA-Z0-9_\- ]+$/.test(p)) return 'Lettres, chiffres, _ - et espace uniquement.';
+  if (pseudoHasBadWord(p)) return 'Ce pseudo n\'est pas autorisé.';
+  return null;
+}
+
 async function renderGlobalCount() {
   const el = document.getElementById('global-count');
   if (!el) return;
@@ -1740,23 +1878,35 @@ function loadBests() {
 }
 
 function loadStats() {
-  try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{"started":0,"completed":0}'); }
-  catch { return { started: 0, completed: 0 }; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(STATS_KEY) || 'null');
+    if (!raw) return {};
+    // Migration ancien format {started, completed} → nouveau
+    if (typeof raw.started === 'number')
+      return { _total: { started: raw.started, completed: raw.completed } };
+    return raw;
+  } catch { return {}; }
 }
 
-function incStat(key) {
+function incStat(key, diff) {
   const s = loadStats();
-  s[key] = (s[key] || 0) + 1;
+  if (!s._total) s._total = { started: 0, completed: 0 };
+  s._total[key] = (s._total[key] || 0) + 1;
+  if (diff) {
+    if (!s[diff]) s[diff] = { started: 0, completed: 0 };
+    s[diff][key] = (s[diff][key] || 0) + 1;
+  }
   localStorage.setItem(STATS_KEY, JSON.stringify(s));
 }
 
 function renderStats() {
   const el = document.getElementById('game-stats');
   if (!el) return;
-  const { started, completed } = loadStats();
-  if (!started) { el.innerHTML = ''; return; }
-  el.innerHTML = `🎮 <span>${started}</span> partie${started > 1 ? 's' : ''} lancée${started > 1 ? 's' : ''}`
-    + (completed ? ` · <span>${completed}</span> complétée${completed > 1 ? 's' : ''}` : '');
+  const s = loadStats();
+  const tot = s._total || {};
+  if (!tot.started) { el.innerHTML = ''; return; }
+  el.innerHTML = `🎮 Total : <span>${tot.started}</span> partie${tot.started > 1 ? 's' : ''}` +
+    (tot.completed ? ` · <span>${tot.completed}</span> complétée${tot.completed > 1 ? 's' : ''}` : '');
 }
 
 function saveBest(diff, score) {
@@ -1771,15 +1921,141 @@ function saveBest(diff, score) {
 }
 
 function renderPersonalBest() {
-  const el   = document.getElementById('personal-best');
+  const el = document.getElementById('personal-best');
   if (!el) return;
-  const best = loadBests()[difficulty];
-  if (best) {
-    el.innerHTML = `🏆 Record (${difficulty}) : <span>${best.score} pts</span> — ${best.date}`;
-  } else {
-    el.innerHTML = `Aucun record enregistré en mode ${difficulty}`;
+  const best  = loadBests()[difficulty];
+  const stats = loadStats()[difficulty] || {};
+  const diffLabel = { facile:'Facile', moyen:'Moyen', difficile:'Difficile',
+                      avance:'Expert', expert2:'Expert+', diabolique:'Diabolique' }[difficulty] || difficulty;
+  let html = '';
+  if (best)
+    html += `🏆 Record : <span>${best.score} pts</span> — ${best.date}`;
+  else
+    html += `Aucun record en mode <strong>${diffLabel}</strong>`;
+  if (stats.started)
+    html += `<br><small style="color:#475569">${stats.started} partie${stats.started>1?'s':''} jouée${stats.started>1?'s':''}`
+          + (stats.completed ? ` · ${stats.completed} complétée${stats.completed>1?'s':''}` : '') + `</small>`;
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LEADERBOARD UI
+// ═══════════════════════════════════════════════════════════
+const DIFF_LABELS = { facile:'Facile', moyen:'Moyen', difficile:'Difficile',
+                      avance:'Expert', expert2:'Expert+', diabolique:'Diabolique' };
+let _lbDiff = 'moyen';
+
+function openLeaderboard() {
+  document.getElementById('lb-overlay').classList.add('show');
+  renderLbTabs();
+  loadLbContent(_lbDiff);
+}
+function closeLb() { document.getElementById('lb-overlay').classList.remove('show'); }
+
+function renderLbTabs() {
+  const el = document.getElementById('lb-tabs');
+  el.innerHTML = Object.entries(DIFF_LABELS).map(([k,v]) =>
+    `<button class="lb-tab${k===_lbDiff?' active':''}" onclick="loadLbContent('${k}')">${v}</button>`
+  ).join('');
+}
+
+async function loadLbContent(diff) {
+  _lbDiff = diff;
+  renderLbTabs();
+  const el = document.getElementById('lb-content');
+  el.innerHTML = '<p class="lb-empty">Chargement…</p>';
+  const rows = await sbGetTop5(diff);
+  if (!rows.length) { el.innerHTML = '<p class="lb-empty">Aucun score enregistré</p>'; return; }
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = `<table class="lb-table">
+    <thead><tr><th>#</th><th>Pseudo</th><th>Score</th><th>Date</th></tr></thead>
+    <tbody>${rows.map((r,i) => `<tr>
+      <td class="${i<3?'lb-rank-'+(i+1):''}">${medals[i]||i+1}</td>
+      <td>${escHtml(r.pseudo)}</td>
+      <td><strong>${r.score} pts</strong></td>
+      <td style="color:#475569;font-size:0.85em">${new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ── Formulaire pseudo dans la fenêtre de victoire ────────────
+let _pendingScore = 0, _pendingDiff = '';
+
+function showPseudoForm(score, diff) {
+  _pendingScore = score; _pendingDiff = diff;
+  const label = DIFF_LABELS[diff] || diff;
+  const vs = document.getElementById('victory-score');
+  if (vs.querySelector('.pseudo-section')) return;
+  vs.insertAdjacentHTML('beforeend', `
+    <div class="pseudo-section">
+      <p>🏆 Vous entrez dans le <strong>Top 5</strong> en mode <strong>${label}</strong> !</p>
+      <input id="pseudo-inp" type="text" maxlength="20" placeholder="Votre pseudo (2–20 car.)…"
+             oninput="document.getElementById('pseudo-err').textContent=''">
+      <div class="pseudo-error" id="pseudo-err"></div>
+      <button class="btn-pseudo" onclick="submitPseudo()">Soumettre</button>
+      <button class="btn-pseudo-skip" onclick="this.closest('.pseudo-section').remove()">Passer</button>
+    </div>`);
+}
+
+async function submitPseudo() {
+  const inp = document.getElementById('pseudo-inp');
+  const err = document.getElementById('pseudo-err');
+  const msg = validatePseudo(inp.value);
+  if (msg) { err.textContent = msg; return; }
+  const btn = document.querySelector('.btn-pseudo');
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    await sbSubmitScore(_pendingDiff, inp.value.trim(), _pendingScore);
+    document.querySelector('.pseudo-section').innerHTML =
+      `<p style="color:#4ade80">✓ Score soumis ! Merci ${escHtml(inp.value.trim())} 🎉</p>`;
+  } catch {
+    err.textContent = 'Erreur lors de la soumission. Réessaie.';
+    btn.disabled = false; btn.textContent = 'Soumettre';
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+// CHANGELOG
+// ═══════════════════════════════════════════════════════════
+const CHANGELOG = [
+  { v:'1.3', date:'29/05/2026', changes:[
+    'Top 5 par difficulté avec classement mondial',
+    'Stats locales détaillées par niveau de difficulté',
+    'Correction bug : cases avec 1–2 réponses en mode Facile',
+    'Seuils de difficulté revus (Facile ≥15, Moyen 8–14…)',
+    'Mode Diabolique avec diagonales optionnelles',
+    'Filtre de pseudos offensants',
+  ]},
+  { v:'1.2', date:'28/05/2026', changes:[
+    'Mode Diabolique (grille à solution unique)',
+    'Compteur global de parties via Supabase',
+    'Score intelligent : difficulté × rareté du pays (★★★)',
+    'Pénalités : indices, mauvaises réponses, retraits',
+    'Record personnel par niveau de difficulté',
+  ]},
+  { v:'1.1', date:'27/05/2026', changes:[
+    'Thème visuel bleu marine / atlas du monde',
+    'Mode Expert + (double diagonale ↘↙)',
+    'Bouton ✕ pour modifier une case validée',
+    'Popup réponses possibles après victoire',
+  ]},
+  { v:'1.0', date:'26/05/2026', changes:[
+    'Lancement de Sudogeo',
+    '194 pays, drapeaux via flagcdn.com',
+    '6 niveaux de difficulté dont Expert et Diabolique',
+    'Règles : continent, langue, drapeau, climat, religion…',
+  ]},
+];
+
+function openCl() {
+  const p = document.getElementById('cl-panel');
+  p.innerHTML = `<h3>📋 Changelog Sudogeo</h3>` + CHANGELOG.map(v => `
+    <div class="cl-version">
+      <strong>v${v.v}</strong><span>${v.date}</span>
+      <ul>${v.changes.map(c => `<li>${c}</li>`).join('')}</ul>
+    </div>`).join('');
+  document.getElementById('cl-overlay').classList.add('show');
+}
+function closeCl() { document.getElementById('cl-overlay').classList.remove('show'); }
 
 // ─── Démarrage ─────────────────────────────────────────────
 document.getElementById('zoo-search').addEventListener('input', e => renderZoo(e.target.value));
