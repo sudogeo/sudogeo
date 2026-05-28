@@ -49,8 +49,10 @@ button {
 .score { font-size: 1.15em; font-weight: bold; color: #60a5fa; margin-bottom: 4px; }
 .potential-score { font-size: 0.78em; color: #888; margin-bottom: 4px; }
 .potential-score span { color: #ffcc80; font-weight: 600; }
-.personal-best { font-size: 0.75em; color: #64748b; margin-bottom: 12px; }
+.personal-best { font-size: 0.75em; color: #64748b; margin-bottom: 4px; }
 .personal-best span { color: #fbbf24; font-weight: 600; }
+.game-stats { font-size: 0.72em; color: #475569; margin-bottom: 12px; }
+.game-stats span { color: #94a3b8; font-weight: 600; }
 .new-record-badge {
   display: inline-block; background: linear-gradient(135deg,#f59e0b,#ef4444);
   color: #fff; font-size: 0.8em; font-weight: 700;
@@ -382,6 +384,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
 <div class="score" id="score">0 / 9 cases validées</div>
 <div class="potential-score" id="potential-score"></div>
 <div class="personal-best" id="personal-best"></div>
+<div class="game-stats" id="game-stats"></div>
+<div class="game-stats" id="global-count"></div>
 <div id="no-puzzle" class="no-puzzle"></div>
 
 <div class="grid-wrap">
@@ -918,7 +922,12 @@ function updateHintBtn() {
 // ═══════════════════════════════════════════════════════════
 function newGame() {
   puzzle = generatePuzzle(difficulty);
-  if (!puzzle) return; // ne devrait jamais arriver
+  if (!puzzle) return;
+  if (_isFirstGame) { _isFirstGame = false; } else {
+    incStat('started');
+    renderStats();
+    sbIncrementGlobal().then(renderGlobalCount);
+  }
   states      = Array(9).fill(null);
   hintStates  = Array.from({length:9}, () => new Set());
   selectedIdx = -1;
@@ -1353,6 +1362,8 @@ function checkVictory() {
       ${totalResetPenalty ? `<div class="score-row neg"><span>Pays retirés puis replacés</span><span>−${totalResetPenalty} pts</span></div>` : ''}
       ${botCells ? `<div class="score-row neg"><span>${botCells} case(s) résolue(s) par solver</span><span>0 pt</span></div>` : ''}
     </div>`;
+  incStat('completed');
+  renderStats();
   const isRecord = saveBest(difficulty, total);
   renderPersonalBest();
   if (isRecord) {
@@ -1676,11 +1687,70 @@ function renderZoo(rawQ) {
 // ═══════════════════════════════════════════════════════════
 // RECORD PERSONNEL (localStorage)
 // ═══════════════════════════════════════════════════════════
-const STORAGE_KEY = 'sudogeo_best';
+// ── Supabase (compteur global) ──────────────────────────────
+const SB_URL  = 'https://fepiribayrxnktrfpjdw.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlcGlyaWJheXJ4bmt0cmZwamR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5ODg0MDEsImV4cCI6MjA5NTU2NDQwMX0.s920bHMmkUvvIGVkA_WZyMrr79_JL2Q3cd-XNJ65EIk';
+
+async function sbGetGlobalCount() {
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/global_stats?id=eq.games_played&select=value`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } }
+    );
+    const [row] = await r.json();
+    return row?.value ?? null;
+  } catch { return null; }
+}
+
+async function sbIncrementGlobal() {
+  try {
+    await fetch(`${SB_URL}/rest/v1/rpc/increment_games`, {
+      method: 'POST',
+      headers: {
+        apikey: SB_KEY,
+        Authorization: `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch { /* fail silencieux */ }
+}
+
+async function renderGlobalCount() {
+  const el = document.getElementById('global-count');
+  if (!el) return;
+  const n = await sbGetGlobalCount();
+  if (n === null) { el.textContent = ''; return; }
+  el.innerHTML = `🌍 <span>${n.toLocaleString('fr-FR')}</span> partie${n > 1 ? 's' : ''} jouée${n > 1 ? 's' : ''} dans le monde`;
+}
+
+// ─────────────────────────────────────────────────────────────
+const STORAGE_KEY       = 'sudogeo_best';
+const STATS_KEY         = 'sudogeo_stats';
+let   _isFirstGame      = true; // évite de compter le chargement initial
 
 function loadBests() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
   catch { return {}; }
+}
+
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{"started":0,"completed":0}'); }
+  catch { return { started: 0, completed: 0 }; }
+}
+
+function incStat(key) {
+  const s = loadStats();
+  s[key] = (s[key] || 0) + 1;
+  localStorage.setItem(STATS_KEY, JSON.stringify(s));
+}
+
+function renderStats() {
+  const el = document.getElementById('game-stats');
+  if (!el) return;
+  const { started, completed } = loadStats();
+  if (!started) { el.innerHTML = ''; return; }
+  el.innerHTML = `🎮 <span>${started}</span> partie${started > 1 ? 's' : ''} lancée${started > 1 ? 's' : ''}`
+    + (completed ? ` · <span>${completed}</span> complétée${completed > 1 ? 's' : ''}` : '');
 }
 
 function saveBest(diff, score) {
@@ -1707,7 +1777,7 @@ function renderPersonalBest() {
 
 // ─── Démarrage ─────────────────────────────────────────────
 document.getElementById('zoo-search').addEventListener('input', e => renderZoo(e.target.value));
-loadCountries().then(() => { buildDiabRules(); newGame(); renderPersonalBest(); });
+loadCountries().then(() => { buildDiabRules(); newGame(); renderPersonalBest(); renderStats(); renderGlobalCount(); });
 </script>
 </body>
 </html>
