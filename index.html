@@ -1322,17 +1322,14 @@ function tryGenerateDiabolique(maxTries = 800) {
       for (let col = 0; col < 3; col++)
         counts.push(rowPools[row].filter(p => colRules[col].fn(p)).length);
 
-    // 4. Vérifier l'unicité (rapide : 2-4 candidats/case max)
+    // 4. Vérifier l'unicité : exactement 1 combinaison de 9 pays valide
     if (countSolutions(rowRules, colRules, null, null) !== 1) continue;
 
     const base = { rowRules, colRules, diagRule: null, diagRule2: null, counts, isUnique: true };
-    // 5. Diagonale principale obligatoire (↘ cases 0,4,8)
+    // 5. Diagonale obligatoire — réduit les candidats et maintient l'unicité
+    //    (sans diag, l'unicité est déjà garantie ; la diag la renforce visuellement)
     const withDiag = tryAddDiabDiag(base, usedGroups);
-    if (!withDiag.diagRule) continue;
-    // 6. Anti-diagonale obligatoire (↙ cases 2,4,6) — rend la case centrale 4×contrainte
-    const groups2 = new Set([...usedGroups, withDiag.diagRule.g]);
-    const withDiag2 = tryAddDiabDiag2(withDiag, groups2);
-    if (withDiag2.diagRule2) return withDiag2;
+    if (withDiag.diagRule) return withDiag;
   }
   return null;
 }
@@ -2461,8 +2458,8 @@ async function submitPseudo() {
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
   { v:'1.5', date:'29/05/2026', changes:[
-    'Diabolique : 2e diagonale obligatoire (↘ + ↙) — case centrale à 4 contraintes',
-    'Diabolique : intersections encore plus serrées (max 4 candidats/case)',
+    'Diabolique : solution unique garantie (1 seule combinaison de 9 pays valide)',
+    'Diabolique : diagonale obligatoire, intersections serrées (max 4 candidats/case)',
     'Scoring × difficulté : Facile ×0.7 → Diabolique ×3.0',
     'Bonus ligne complète, colonne complète et grille entière (×difficulté)',
     'Détail des bonus affiché dans le score de fin de partie',
