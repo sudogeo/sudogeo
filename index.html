@@ -1609,16 +1609,9 @@ function renderGrid() {
       resetBtn.title = 'Modifier la réponse';
       resetBtn.addEventListener('click', e => {
         e.stopPropagation();
-        const pen = Math.ceil(cellBasePoints(idx) / 3);
-        resetPenalties[idx] += pen;
         states[idx] = null;
         setCellState(idx, null, '');
         hideCellImage(idx);
-        // Afficher brièvement la pénalité
-        const msgEl = document.getElementById('msg' + idx);
-        msgEl.textContent = `−${pen} pt${pen > 1 ? 's' : ''}`;
-        msgEl.style.color = '#ef9a9a';
-        setTimeout(() => { if (states[idx] === null) msgEl.textContent = ''; msgEl.style.color = ''; }, 1200);
         hintStates[idx].clear();
         updateScore();
         updateHintBtn();
@@ -1830,11 +1823,11 @@ function computeScore() {
     const country = COUNTRY_INDEX.get(q);
     const rm      = rarityMult(country);
     const gross   = Math.round(base * rm);
-    const pen     = hintPenalties[idx] + resetPenalties[idx] + wrongPenalties[idx];
-    const pts     = Math.max(0, gross - pen);
+    const pen     = hintPenalties[idx] + wrongPenalties[idx];
+    const pts     = gross - pen; // peut être négatif si trop d'erreurs
     total += pts;
     totalHintPenalty += hintPenalties[idx];
-    cellScores.push({ pts, gross, penalty: pen, hintPen: hintPenalties[idx], resetPen: resetPenalties[idx], wrongPen: wrongPenalties[idx], bot: false, rm });
+    cellScores.push({ pts, gross, penalty: pen, hintPen: hintPenalties[idx], wrongPen: wrongPenalties[idx], bot: false, rm });
   }
 
   // Bonus lignes / colonnes / grille complète (cases résolues par le joueur uniquement)
@@ -1853,9 +1846,8 @@ function computeScore() {
     gridBonus = Math.max(1, Math.round(12 * mult));
   total += rowBonus + colBonus + gridBonus;
 
-  const totalResetPenalty = resetPenalties.reduce((a,b) => a+b, 0);
   const totalWrongPenalty = wrongPenalties.reduce((a,b) => a+b, 0);
-  return { total, totalHintPenalty, totalResetPenalty, totalWrongPenalty, botCells, cellScores, rowBonus, colBonus, gridBonus };
+  return { total, totalHintPenalty, totalWrongPenalty, botCells, cellScores, rowBonus, colBonus, gridBonus };
 }
 
 function updateScore() {
@@ -1915,7 +1907,7 @@ function solveAll() {
 
 function checkVictory() {
   if (!states.every(s => s === 'valid')) return;
-  const { total, totalHintPenalty, totalResetPenalty, totalWrongPenalty, botCells, cellScores, rowBonus, colBonus, gridBonus } = computeScore();
+  const { total, totalHintPenalty, totalWrongPenalty, botCells, cellScores, rowBonus, colBonus, gridBonus } = computeScore();
 
   const diffLabel = { facile:'Facile', moyen:'Moyen', difficile:'Difficile', avance:'Expert', expert2:'Expert +', diabolique:'Diabolique' };
   const mult = DIFF_MULT[difficulty] || 1.0;
@@ -1928,7 +1920,7 @@ function checkVictory() {
 
   const vs = document.getElementById('victory-score');
   vs.innerHTML = `
-    <div class="score-total">&#127942; ${total} pts</div>
+    <div class="score-total" style="${total <= 0 ? 'color:#fca5a5' : ''}">${total <= 0 ? '😬' : '🏆'} ${total} pts${total <= 0 ? ' — trop d\'erreurs !' : ''}</div>
     <div class="score-breakdown">
       <div class="score-row" style="color:#888;font-size:0.85em"><span>Multiplicateur ${diffLabel[difficulty] || difficulty} (×${mult.toFixed(1)})</span><span></span></div>
       ${rareRows}
@@ -1937,7 +1929,6 @@ function checkVictory() {
       ${gridBonus ? `<div class="score-row" style="color:#fde68a"><span>🏆 Bonus grille entière</span><span>+${gridBonus} pts</span></div>` : ''}
       ${totalWrongPenalty ? `<div class="score-row neg"><span>Réponses invalides</span><span>−${totalWrongPenalty} pts</span></div>` : ''}
       ${totalHintPenalty  ? `<div class="score-row neg"><span>Indices utilisés</span><span>−${totalHintPenalty} pts</span></div>` : ''}
-      ${totalResetPenalty ? `<div class="score-row neg"><span>Pays retirés puis replacés</span><span>−${totalResetPenalty} pts</span></div>` : ''}
       ${botCells ? `<div class="score-row neg"><span>${botCells} case(s) résolue(s) par solver</span><span>0 pt</span></div>` : ''}
     </div>`;
   incStat('completed', difficulty);
@@ -2396,6 +2387,7 @@ function renderStats() {
 }
 
 function saveBest(diff, score) {
+  if (score <= 0) return false; // score négatif ou nul : pas de record
   const bests = loadBests();
   const prev  = bests[diff];
   if (!prev || score > prev.score) {
