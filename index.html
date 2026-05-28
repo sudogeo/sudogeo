@@ -1353,12 +1353,38 @@ function tryGenerateDiabolique(maxTries = 2000) {
   return null;
 }
 
+// ── Pool de grilles diaboliques pré-calculées en arrière-plan ──
+let DIAB_POOL = [];
+let DIAB_POOL_FILLING = false;
+const DIAB_POOL_TARGET = 25;
+
+function fillDiabPool() {
+  if (DIAB_POOL_FILLING) return;
+  DIAB_POOL_FILLING = true;
+  function step() {
+    if (DIAB_POOL.length >= DIAB_POOL_TARGET) {
+      DIAB_POOL_FILLING = false;
+      return;
+    }
+    const p = tryGenerateDiabolique(100);
+    if (p) DIAB_POOL.push(p);
+    setTimeout(step, 20); // 20 ms de pause entre chaque grille → UI fluide
+  }
+  setTimeout(step, 300); // démarre 300 ms après l'appel
+}
+
 function generatePuzzle(diff='moyen') {
   if (diff === 'diabolique') {
-    // Augmenter les essais pour trouver un vrai puzzle unique
+    // Piocher dans le pool pré-calculé si disponible
+    if (DIAB_POOL.length > 0) {
+      const idx = Math.floor(Math.random() * DIAB_POOL.length);
+      const puzzle = DIAB_POOL.splice(idx, 1)[0];
+      fillDiabPool(); // recharger le pool en fond
+      return puzzle;
+    }
+    // Pool vide : génération synchrone (1re fois ou fallback)
     const r = tryGenerateDiabolique(2000);
-    if (r) return r;
-    // Fallback : puzzle difficile classique, sans contrainte d'unicité
+    if (r) { fillDiabPool(); return r; }
     const fb = tryGenerate('difficile', 4, 9, 800) || tryGenerate('moyen', 8, 15, 400);
     if (fb) return { ...fb, isUnique: false };
     return null;
@@ -1401,6 +1427,7 @@ function setDifficulty(d) {
   document.querySelectorAll('.btn-diff').forEach(b => {
     b.classList.toggle('active', b.classList.contains(d));
   });
+  if (d === 'diabolique') fillDiabPool(); // démarre uniquement si l'utilisateur choisit ce mode
   newGame();
   renderPersonalBest();
 }
