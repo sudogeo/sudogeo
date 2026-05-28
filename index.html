@@ -77,6 +77,8 @@ button {
   grid-template-columns: 160px repeat(3, 150px);
   gap: 5px;
 }
+/* Expert+ : 5e colonne pour la règle ↙ */
+.grid-expert2 { grid-template-columns: 160px repeat(3, 150px) 160px; }
 .corner { /* empty */ }
 .diag-rule {
   background: rgba(156,39,176,0.18);
@@ -379,9 +381,9 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
   .controls { gap: 6px; margin-bottom: 10px; }
   button { padding: 8px 12px; font-size: 0.8em; }
 
-  /* Colonnes en vw : la grille tient dans le viewport sans scroll horizontal
-     21vw (label) + 3×25vw (cases) + 3×2px (gaps) ≈ 96vw → OK sur 320–430px */
-  .grid { grid-template-columns: 21vw repeat(3, 25vw); gap: 2px; }
+  /* 4 colonnes : 21vw + 3×25vw ≈ 96vw — 5 colonnes : 15vw + 3×20vw + 15vw = 90vw */
+  .grid           { grid-template-columns: 21vw repeat(3, 25vw); gap: 2px; }
+  .grid-expert2   { grid-template-columns: 15vw repeat(3, 20vw) 15vw; gap: 2px; }
   .col-rule, .row-rule { font-size: 0.6em; padding: 5px 3px; min-height: 44px; line-height: 1.25; }
   .cell { min-height: 76px; padding: 5px; gap: 4px; }
   /* 16px MINIMUM sur iOS : en dessous le navigateur zoome et casse le layout */
@@ -1031,10 +1033,8 @@ function renderGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
 
-  // En mode Expert+ : 5 colonnes (coin-gauche + 3 cols + coin-droit)
-  grid.style.gridTemplateColumns = puzzle.diagRule2
-    ? '160px repeat(3, 150px) 160px'
-    : '';
+  // En mode Expert+ : classe CSS qui gère 4 ou 5 colonnes (responsive)
+  grid.classList.toggle('grid-expert2', !!puzzle.diagRule2);
 
   // Coin haut-gauche : règle diagonale ↘ ou badge Diabolique
   if (puzzle.diagRule) {
