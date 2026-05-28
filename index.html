@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sudogeo Pays</title>
+<title>Sudogeo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -394,6 +396,390 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
   .zoo-panel { max-height: 70vh; }
 }
 </style>
+
+<!-- ═══════════════ REDESIGN ═══════════════ -->
+<style>
+:root {
+  --bg:         #07111e;
+  --surface:    #0c1829;
+  --surface-2:  #101f36;
+  --border:     rgba(255,255,255,0.07);
+  --border-med: rgba(255,255,255,0.11);
+  --border-hi:  rgba(255,255,255,0.20);
+  --accent:     #3b82f6;
+  --accent-dim: rgba(59,130,246,0.13);
+  --text-1:     #e8edf4;
+  --text-2:     #8496b0;
+  --text-3:     #465771;
+  --teal-dim:   rgba(20,184,166,0.11);
+  --purple-dim: rgba(168,85,247,0.11);
+}
+
+*, input, button, select, textarea { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  background-image: radial-gradient(ellipse 90% 45% at 50% -5%, rgba(59,130,246,0.08) 0%, transparent 100%);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color: var(--text-1);
+  padding: 28px 16px 68px;
+}
+
+h1 {
+  font-size: 2.35em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 45%, #dbeafe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: var(--text-2);
+  font-size: 0.84em;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+.subtitle strong { color: var(--text-1); font-weight: 600; }
+
+/* ── Difficulty bar ──────────────────────────────────────── */
+.diff-bar {
+  background: var(--surface);
+  border: 1px solid var(--border-med);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.diff-bar label { display: none; }
+
+.btn-diff {
+  padding: 7px 13px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.78em;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-diff:hover { background: rgba(255,255,255,0.06); color: var(--text-2); transform: none; }
+
+.btn-diff.active { box-shadow: 0 1px 4px rgba(0,0,0,0.45); }
+.btn-diff.active.facile    { background: #14532d; color: #86efac; border-color: transparent; }
+.btn-diff.active.moyen     { background: #78350f; color: #fde68a; border-color: transparent; }
+.btn-diff.active.difficile { background: #7f1d1d; color: #fca5a5; border-color: transparent; }
+.btn-diff.active.avance    { background: #581c87; color: #d8b4fe; border-color: transparent; }
+.btn-diff.active.expert2   { background: #831843; color: #fbcfe8; border-color: transparent; }
+.btn-diff.active.diabolique {
+  background: linear-gradient(135deg, #450a0a, #7f1d1d);
+  color: #fca5a5;
+  border-color: transparent;
+  box-shadow: 0 0 16px rgba(239,68,68,0.18), 0 1px 4px rgba(0,0,0,0.45);
+}
+
+/* ── Action buttons ──────────────────────────────────────── */
+button {
+  font-weight: 600;
+  transition: all 0.15s;
+  border-radius: 10px;
+}
+
+.btn-new { background: var(--accent); color: #fff; border: none; }
+.btn-new:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
+
+.btn-validate { background: var(--accent); color: #fff; border: none; }
+.btn-validate:hover { background: #2563eb; transform: translateY(-1px); }
+
+.btn-hint {
+  background: var(--surface-2) !important;
+  color: var(--text-2) !important;
+  border: 1px solid var(--border-med) !important;
+}
+.btn-hint:hover {
+  background: rgba(255,255,255,0.09) !important;
+  color: var(--text-1) !important;
+  border-color: var(--border-hi) !important;
+  transform: translateY(-1px);
+}
+
+.btn-cell-hint {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-3);
+  background: none;
+}
+.btn-cell-hint:hover { border-color: rgba(245,158,11,0.5); color: #fde68a; background: rgba(245,158,11,0.08); }
+
+.btn-solver {
+  background: transparent;
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.btn-solver:hover:not(:disabled) { background: rgba(255,255,255,0.06); color: var(--text-2); border-color: var(--border-med); transform: none; }
+
+button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important; }
+
+/* ── Score area ──────────────────────────────────────────── */
+.score { font-size: 1.05em; font-weight: 700; color: #60a5fa; }
+.potential-score span { color: #fde68a; }
+.personal-best span { color: #fbbf24; }
+.game-stats span { color: var(--text-2); }
+
+.score-breakdown {
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.score-total { font-weight: 800; color: #fbbf24; }
+.score-row { color: var(--text-2); }
+.score-row.neg { color: #fca5a5; }
+
+/* ── Grid ────────────────────────────────────────────────── */
+.grid-wrap { margin-top: 14px; }
+
+.col-rule {
+  background: var(--teal-dim);
+  border: 1px solid rgba(20,184,166,0.18);
+  border-radius: 10px;
+  color: #5eead4;
+  font-size: 0.76em;
+  line-height: 1.4;
+}
+
+.row-rule {
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.16);
+  border-radius: 10px;
+  color: #93c5fd;
+  font-size: 0.76em;
+  line-height: 1.4;
+}
+
+.diag-rule {
+  background: var(--purple-dim);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 10px;
+  color: #d8b4fe;
+  font-size: 0.76em;
+  line-height: 1.4;
+}
+
+.cell {
+  background: var(--surface);
+  border: 1px solid var(--border-med);
+  border-radius: 10px;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+.cell:hover { border-color: var(--border-hi); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.cell.valid   { border-color: rgba(34,197,94,0.42);  background: rgba(34,197,94,0.07);  }
+.cell.invalid { border-color: rgba(239,68,68,0.42);  background: rgba(239,68,68,0.07);  }
+.cell.hinted  { border-color: rgba(245,158,11,0.42); background: rgba(245,158,11,0.07); }
+.cell.selected { outline: 2px solid rgba(255,255,255,0.42); outline-offset: 1px; }
+
+.cell.cell-diag  { border-color: rgba(168,85,247,0.32); }
+.cell.cell-diag2 { border-color: rgba(233,30,99,0.35);  }
+.cell.cell-diag.cell-diag2 { border-color: rgba(168,85,247,0.35); }
+
+.cell input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-med);
+  border-radius: 7px;
+  color: var(--text-1);
+}
+.cell input:focus { border-color: rgba(59,130,246,0.55); background: rgba(59,130,246,0.07); }
+
+.cell.valid   .cell-msg { color: #86efac; }
+.cell.invalid .cell-msg { color: #fca5a5; }
+.cell.hinted  .cell-msg { color: #fde68a; }
+
+.cc-easy   { color: #86efac; }
+.cc-medium { color: #fde68a; }
+.cc-hard   { color: #fca5a5; }
+.cell.valid .cell-count { color: #86efac; }
+
+/* ── Overlays & Panels ───────────────────────────────────── */
+.overlay {
+  background: rgba(0,0,0,0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.overlay-box {
+  background: var(--surface);
+  border: 1px solid rgba(59,130,246,0.22);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.03);
+  max-width: 340px;
+  width: 90%;
+}
+.overlay-box h2 { font-weight: 800; color: #60a5fa; }
+.overlay-box p  { color: var(--text-2); }
+
+.zoo-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.zoo-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-med);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.65);
+}
+.zoo-head { border-bottom: 1px solid var(--border); padding: 14px 16px; }
+.zoo-head h3 { color: #60a5fa; font-weight: 700; }
+
+.zoo-search {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border-med);
+  border-radius: 8px;
+  color: var(--text-1);
+}
+.zoo-search:focus { border-color: rgba(59,130,246,0.5); background: rgba(59,130,246,0.06); }
+
+.zoo-close { color: var(--text-3); border-radius: 6px; }
+.zoo-close:hover { color: var(--text-1); background: rgba(255,255,255,0.08); }
+
+.zoo-meta { color: var(--text-3); }
+.zoo-item:hover { background: rgba(59,130,246,0.09); }
+.zoo-item .zi-name { color: var(--text-1); }
+.zoo-item.used { opacity: 0.28; }
+
+.lb-tab {
+  border: 1px solid var(--border-med);
+  color: var(--text-3);
+  background: transparent;
+  border-radius: 20px;
+}
+.lb-tab.active { border-color: var(--accent); color: #93c5fd; background: var(--accent-dim); }
+
+.lb-table th { color: var(--text-3); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.lb-table td { color: var(--text-1); border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+.pseudo-section {
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 12px;
+}
+.pseudo-section input {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 8px;
+  color: #fff;
+}
+.pseudo-section input:focus { border-color: #fbbf24; }
+
+#ac-drop {
+  background: var(--surface);
+  border: 1px solid var(--border-med);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.65);
+}
+#ac-drop .ac-item { color: var(--text-1); border-bottom: 1px solid rgba(255,255,255,0.04); }
+#ac-drop .ac-item:hover, #ac-drop .ac-item.ac-sel { background: rgba(59,130,246,0.15); }
+
+.answers-popup {
+  background: var(--surface);
+  border: 1px solid var(--border-med);
+  border-radius: 12px;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.65);
+}
+.ap-title { color: #60a5fa; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.ap-item  { color: var(--text-1); border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+#wiki-tooltip {
+  background: var(--surface-2);
+  border: 1px solid var(--border-med);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+}
+#wiki-tooltip img { border-radius: 7px; }
+#wiki-tooltip .wt-name { color: var(--text-2); }
+#wiki-tooltip .wt-msg  { color: var(--text-3); }
+
+.btn-changelog {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-3);
+}
+.btn-changelog:hover { background: rgba(255,255,255,0.09); color: var(--text-2); }
+
+.cl-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.cl-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-med);
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.65);
+}
+.cl-panel h3 { color: #60a5fa; font-weight: 700; }
+.cl-version strong { color: #fbbf24; }
+.cl-version span   { color: var(--text-3); }
+.cl-version li     { color: var(--text-2); }
+
+/* ── Mobile — compatibilité tous modes ───────────────────── */
+@media (max-width: 620px) {
+  body { padding: 12px 6px 68px; }
+  h1 { font-size: 1.65em; letter-spacing: -0.02em; }
+  .subtitle { font-size: 0.76em; margin-bottom: 14px; }
+
+  /* Diff bar : scrollable horizontalement sur très petits écrans */
+  .diff-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: flex-start;
+    padding: 4px;
+    border-radius: 10px;
+    max-width: 100%;
+  }
+  .diff-bar::-webkit-scrollbar { display: none; }
+  .btn-diff { padding: 6px 10px; font-size: 0.72em; flex-shrink: 0; }
+
+  .controls { gap: 6px; }
+  button { padding: 8px 12px; font-size: 0.8em; }
+
+  /* Grille 4 cols : 21vw + 3×25vw ≈ 96vw */
+  .grid         { grid-template-columns: 21vw repeat(3, 25vw); gap: 3px; }
+  /* Expert+ 5 cols : 15vw + 3×20vw + 15vw = 90vw */
+  .grid-expert2 { grid-template-columns: 15vw repeat(3, 20vw) 15vw; gap: 3px; }
+
+  .col-rule, .row-rule, .diag-rule { font-size: 0.59em; padding: 5px 4px; line-height: 1.25; }
+  .col-rule, .diag-rule { min-height: 44px; }
+  .row-rule { min-height: 76px; }
+
+  .cell { min-height: 76px; padding: 5px; gap: 4px; border-radius: 8px; }
+  /* 16 px min iOS pour éviter le zoom auto */
+  .cell input { font-size: 16px; padding: 4px 6px; border-radius: 6px; }
+  .cell-count { font-size: 0.55em; }
+  .cell-msg   { font-size: 0.62em; }
+
+  /* Overlay plein-écran sur mobile */
+  .overlay-box { padding: 28px 20px; border-radius: 16px; width: 94%; }
+  .overlay-box h2 { font-size: 1.5em; }
+
+  /* Panneaux zoo/leaderboard */
+  .zoo-overlay { padding: 14px 8px; align-items: flex-end; }
+  .zoo-panel { max-height: 82vh; border-radius: 14px 14px 0 0; max-width: 100%; }
+
+  /* Changelog */
+  .cl-overlay { padding: 0; align-items: flex-end; justify-content: center; }
+  .cl-panel { max-width: 100%; border-radius: 14px 14px 0 0; max-height: 75vh; }
+}
+
+@media (max-width: 380px) {
+  .btn-diff { padding: 5px 8px; font-size: 0.66em; }
+  h1 { font-size: 1.45em; }
+}
+</style>
 </head>
 <body>
 
@@ -411,8 +797,8 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
 </div>
 <div class="controls">
   <button class="btn-new"  onclick="newGame()">&#128260; Nouvelle grille</button>
-  <button class="btn-hint" style="background:#1565c0" onclick="openZoo()">&#127758; Liste des pays</button>
-  <button class="btn-hint" style="background:#92400e" onclick="openLeaderboard()">&#127942; Classement</button>
+  <button class="btn-hint" onclick="openZoo()">&#127758; Liste des pays</button>
+  <button class="btn-hint" onclick="openLeaderboard()">&#127942; Classement</button>
 </div>
 <div class="controls controls-solver">
   <button class="btn-solver" id="btn-solve-cell" onclick="solveCell()" disabled>&#127919; Solver la case</button>
@@ -440,7 +826,7 @@ button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important
 <div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
   <div class="cl-panel" id="cl-panel"></div>
 </div>
-<button class="btn-changelog" onclick="openCl()">v1.3 — changelog</button>
+<button class="btn-changelog" onclick="openCl()">v1.4 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -876,7 +1262,7 @@ function tryAddDiabDiag(puzzle, usedGroups) {
 
 function tryGenerateDiabolique(maxTries = 800) {
   if (DIAB_RULES.length < 6) return null;
-  const MIN_C = 2, MAX_C = 6;
+  const MIN_C = 2, MAX_C = 5;
   const idxArr = Array.from({length: DIAB_RULES.length}, (_, i) => i);
 
   for (let t = 0; t < maxTries; t++) {
@@ -887,7 +1273,7 @@ function tryGenerateDiabolique(maxTries = 800) {
     const usedGroups = new Set(rowRules.map(r => r.g));
     if (usedGroups.size < 3) continue;
 
-    // 2. Pour chaque colonne, chercher greedy une règle qui donne 2-6 candidats
+    // 2. Pour chaque colonne, chercher greedy une règle qui donne 2-5 candidats
     //    dans TOUTES les 3 cases de la colonne
     const colRules = [];
     let colOk = true;
@@ -916,12 +1302,13 @@ function tryGenerateDiabolique(maxTries = 800) {
       for (let col = 0; col < 3; col++)
         counts.push(rowPools[row].filter(p => colRules[col].fn(p)).length);
 
-    // 4. Vérifier l'unicité (rapide : 2-6 candidats/case max)
+    // 4. Vérifier l'unicité (rapide : 2-5 candidats/case max)
     if (countSolutions(rowRules, colRules, null, null) !== 1) continue;
 
     const base = { rowRules, colRules, diagRule: null, diagRule2: null, counts, isUnique: true };
-    // 5. Tenter d'ajouter une diagonale (50 % de chance, si ça reste unique et ≥ 2)
-    return Math.random() < 0.5 ? tryAddDiabDiag(base, usedGroups) : base;
+    // 5. Diagonale obligatoire pour garantir difficulté > expert2
+    const withDiag = tryAddDiabDiag(base, usedGroups);
+    if (withDiag.diagRule) return withDiag;
   }
   return null;
 }
@@ -929,7 +1316,7 @@ function tryGenerateDiabolique(maxTries = 800) {
 function generatePuzzle(diff='moyen') {
   if (diff === 'diabolique') {
     // Augmenter les essais pour trouver un vrai puzzle unique
-    const r = tryGenerateDiabolique(2000);
+    const r = tryGenerateDiabolique(3000);
     if (r) return r;
     // Fallback : puzzle difficile classique, sans contrainte d'unicité
     const fb = tryGenerate('difficile', 4, 9, 800) || tryGenerate('moyen', 8, 15, 400);
@@ -2021,6 +2408,15 @@ async function submitPseudo() {
 // CHANGELOG
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
+  { v:'1.4', date:'29/05/2026', changes:[
+    'Refonte graphique complète (design professionnel)',
+    'Police Inter, titre en dégradé, palette de couleurs cohérente',
+    'Barre de difficulté style "segmented control"',
+    'Overlays avec effet blur, panneaux arrondis',
+    'Mobile : tous les modes compatibles, barre de difficulté scrollable',
+    'Mode Diabolique renforcé : diagonale obligatoire + max 5 candidats/case',
+    'Validation : les grilles Diaboliques sont à solution unique garantie',
+  ]},
   { v:'1.3', date:'29/05/2026', changes:[
     'Top 5 par difficulté avec classement mondial',
     'Stats locales détaillées par niveau de difficulté',
