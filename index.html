@@ -919,7 +919,7 @@ function tryGenerateDiabolique(maxTries = 800) {
     // 4. Vérifier l'unicité (rapide : 2-6 candidats/case max)
     if (countSolutions(rowRules, colRules, null, null) !== 1) continue;
 
-    const base = { rowRules, colRules, diagRule: null, diagRule2: null, counts };
+    const base = { rowRules, colRules, diagRule: null, diagRule2: null, counts, isUnique: true };
     // 5. Tenter d'ajouter une diagonale (50 % de chance, si ça reste unique et ≥ 2)
     return Math.random() < 0.5 ? tryAddDiabDiag(base, usedGroups) : base;
   }
@@ -928,9 +928,13 @@ function tryGenerateDiabolique(maxTries = 800) {
 
 function generatePuzzle(diff='moyen') {
   if (diff === 'diabolique') {
-    return tryGenerateDiabolique(800)
-        || tryGenerate('difficile', 4, 9, 600)
-        || tryGenerate('moyen', 8, 15, 400);
+    // Augmenter les essais pour trouver un vrai puzzle unique
+    const r = tryGenerateDiabolique(2000);
+    if (r) return r;
+    // Fallback : puzzle difficile classique, sans contrainte d'unicité
+    const fb = tryGenerate('difficile', 4, 9, 800) || tryGenerate('moyen', 8, 15, 400);
+    if (fb) return { ...fb, isUnique: false };
+    return null;
   }
   const { minMin, maxMin } = DIFF_CFG[diff] || DIFF_CFG.moyen;
   // Fallback progressif : respecte toujours au moins 60 % du seuil minimum
@@ -1042,7 +1046,7 @@ function renderGrid() {
     corner.className = 'diag-rule';
     corner.innerHTML = `<span>↘</span><em>${puzzle.diagRule.label}</em>`;
     grid.appendChild(corner);
-  } else if (difficulty === 'diabolique') {
+  } else if (difficulty === 'diabolique' && puzzle.isUnique) {
     const corner = document.createElement('div');
     corner.className = 'diag-rule';
     corner.style.cssText = 'background:rgba(220,38,38,0.15);border-color:rgba(220,38,38,0.4);color:#fca5a5;font-size:0.72em';
