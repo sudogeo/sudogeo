@@ -826,7 +826,7 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
 <div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
   <div class="cl-panel" id="cl-panel"></div>
 </div>
-<button class="btn-changelog" onclick="openCl()">v1.5 — changelog</button>
+<button class="btn-changelog" onclick="openCl()">v1.6 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -2476,11 +2476,14 @@ async function submitPseudo() {
 // CHANGELOG
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
-  { v:'1.5', date:'29/05/2026', changes:[
-    'Diabolique : diagonale toujours présente, pool de règles élargi',
+  { v:'1.6', date:'29/05/2026', changes:[
+    'Diabolique : correction majeure — diagonale toujours présente',
     'Diabolique : au moins 1 case avec 1 seul pays valide (case forcée)',
-    'Diabolique : ce pays unique est aussi valide ailleurs — placer au mauvais endroit = grille insoluble',
+    'Diabolique : ce pays est aussi valide ailleurs — se tromper = grille insoluble',
     'Diabolique : solution unique garantie (1 seule combinaison de 9 pays)',
+    'Diabolique : pool de règles élargi pour plus de variété',
+  ]},
+  { v:'1.5', date:'29/05/2026', changes:[
     'Scoring × difficulté : Facile ×0.7 → Diabolique ×3.0',
     'Bonus ligne complète, colonne complète et grille entière (×difficulté)',
     'Détail des bonus affiché dans le score de fin de partie',
