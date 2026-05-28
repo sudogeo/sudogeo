@@ -1,0 +1,1713 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudogeo Pays</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: linear-gradient(135deg, #0c1a2e 0%, #162845 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  color: #e2e8f0;
+}
+h1 { font-size: 2em; margin-bottom: 6px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+.subtitle { color: #94a3b8; margin-bottom: 18px; font-size: 0.88em; text-align: center; }
+.controls { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center; }
+button {
+  padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 0.88em; font-weight: 600; transition: all 0.18s;
+  touch-action: manipulation; /* supprime le délai 300 ms sur iOS/Android */
+}
+.btn-new  { background: #2563eb; color: #fff; }
+.btn-new:hover  { background: #1d4ed8; transform: translateY(-1px); }
+.btn-validate { background: #2196f3; color: #fff; }
+.btn-validate:hover { background: #1976d2; transform: translateY(-1px); }
+.btn-hint { background: #ff9800; color: #fff; }
+.btn-hint:hover { background: #f57c00; transform: translateY(-1px); }
+.btn-cell-hint {
+  align-self: flex-start;
+  background: none; border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 10px; color: #666; cursor: pointer;
+  font-size: 0.62em; padding: 2px 7px; line-height: 1.5;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.btn-cell-hint:hover { border-color: rgba(255,165,0,0.5); color: #ffb74d; background: rgba(255,152,0,0.08); }
+.cell.valid .btn-cell-hint { display: none; }
+.controls-solver { margin-top: -6px; margin-bottom: 14px; }
+.btn-solver {
+  background: rgba(255,255,255,0.07); color: #aaa;
+  border: 1px solid rgba(255,255,255,0.18); font-size: 0.76em;
+  padding: 5px 13px;
+}
+.btn-solver:hover:not(:disabled) { background: rgba(255,255,255,0.15); color: #eee; transform: translateY(-1px); }
+.score { font-size: 1.15em; font-weight: bold; color: #60a5fa; margin-bottom: 4px; }
+.potential-score { font-size: 0.78em; color: #888; margin-bottom: 4px; }
+.potential-score span { color: #ffcc80; font-weight: 600; }
+.personal-best { font-size: 0.75em; color: #64748b; margin-bottom: 12px; }
+.personal-best span { color: #fbbf24; font-weight: 600; }
+.new-record-badge {
+  display: inline-block; background: linear-gradient(135deg,#f59e0b,#ef4444);
+  color: #fff; font-size: 0.8em; font-weight: 700;
+  padding: 3px 10px; border-radius: 12px; margin-bottom: 10px;
+  animation: pulse-badge 0.6s ease-in-out 3;
+}
+@keyframes pulse-badge {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.score-breakdown {
+  background: rgba(0,0,0,0.25); border-radius: 10px;
+  padding: 12px 16px; margin: 12px 0 16px; text-align: left;
+}
+.score-total { font-size: 1.6em; font-weight: bold; color: #ffd700; text-align: center; margin-bottom: 10px; }
+.score-row { display: flex; justify-content: space-between; font-size: 0.82em; margin: 5px 0; color: #94a3b8; }
+.score-row.neg { color: #ef9a9a; }
+.score-row hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0; }
+.grid-wrap { overflow-x: auto; }
+.grid {
+  display: grid;
+  grid-template-columns: 160px repeat(3, 150px);
+  gap: 5px;
+}
+.corner { /* empty */ }
+.diag-rule {
+  background: rgba(156,39,176,0.18);
+  border: 1px solid rgba(156,39,176,0.4);
+  border-radius: 8px; padding: 10px 8px;
+  text-align: center; font-size: 0.78em; color: #ce93d8;
+  min-height: 58px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  line-height: 1.35; gap: 3px;
+}
+.diag-rule em { font-style: normal; font-weight: 600; }
+.col-rule {
+  background: rgba(20,184,166,0.15);
+  border: 1px solid rgba(20,184,166,0.4);
+  border-radius: 8px; padding: 10px 8px;
+  text-align: center; font-size: 0.78em; color: #5eead4;
+  min-height: 58px; display: flex; align-items: center; justify-content: center;
+  line-height: 1.35;
+}
+.row-rule {
+  background: rgba(33,150,243,0.18);
+  border: 1px solid rgba(33,150,243,0.4);
+  border-radius: 8px; padding: 10px 8px;
+  font-size: 0.78em; color: #90caf9;
+  display: flex; align-items: center; min-height: 95px;
+  line-height: 1.35;
+}
+.cell {
+  position: relative;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.14);
+  border-radius: 8px; padding: 8px;
+  display: flex; flex-direction: column; gap: 5px;
+  min-height: 95px; transition: border-color 0.2s, background 0.2s;
+  cursor: pointer; /* iOS : déclenche les événements click sur les divs */
+}
+.cell.valid   { border-color: #4caf50; background: rgba(76,175,80,0.18); }
+.cell-footer  { display: flex; align-items: center; }
+.btn-reset-cell {
+  display: none; margin-left: 4px; flex-shrink: 0;
+  background: rgba(244,67,54,0.8); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 1px 6px; font-size: 0.62em; font-weight: bold;
+  cursor: pointer; line-height: 1.5;
+  transition: background 0.15s;
+}
+.cell.valid:hover .btn-reset-cell { display: inline-block; }
+.btn-reset-cell:hover { background: rgba(244,67,54,1); }
+.cell.invalid { border-color: #f44336; background: rgba(244,67,54,0.18); }
+.cell.hinted  { border-color: #ff9800; background: rgba(255,152,0,0.14); }
+.cell.selected { outline: 2px solid rgba(255,255,255,0.65); outline-offset: 1px; }
+button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
+.cell input {
+  width: 100%; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 5px;
+  color: #fff; padding: 6px 8px; font-size: 0.82em; outline: none;
+  transition: border-color 0.2s;
+}
+.cell input:focus { border-color: rgba(255,255,255,0.5); }
+.cell-msg { font-size: 0.7em; min-height: 14px; line-height: 1.3; }
+.cell.valid   .cell-msg { color: #81c784; }
+.cell.invalid .cell-msg { color: #ef9a9a; }
+.cell.hinted  .cell-msg { color: #ffcc80; }
+.cell-img-wrap {
+  display: none;
+  width: 100%; height: 72px; flex-shrink: 0;
+  align-items: center; justify-content: center;
+  overflow: hidden; border-radius: 5px;
+}
+.cell-img-wrap img {
+  width: 100%; height: 72px;
+  object-fit: cover; border-radius: 5px; display: block;
+}
+.cell-img-none { color: #555; font-size: 1.4em; }
+
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72); align-items: center; justify-content: center; z-index: 50;
+}
+.overlay.show { display: flex; }
+.overlay-box {
+  background: linear-gradient(135deg, #162845, #0c1a2e);
+  border: 2px solid #3b82f6; border-radius: 16px; padding: 40px;
+  text-align: center; box-shadow: 0 0 40px rgba(59,130,246,0.35); max-width: 320px;
+}
+.overlay-box h2 { font-size: 1.9em; color: #60a5fa; margin-bottom: 8px; }
+.overlay-box p  { color: #94a3b8; margin-bottom: 20px; }
+.no-puzzle { color: #ef9a9a; font-size: 0.85em; margin-top: 8px; }
+
+.diff-bar {
+  display: flex; gap: 6px; margin-bottom: 12px;
+  align-items: center; flex-wrap: wrap; justify-content: center;
+}
+.diff-bar label { color: #94a3b8; font-size: 0.82em; margin-right: 2px; }
+.btn-diff {
+  padding: 6px 16px; border: 2px solid rgba(255,255,255,0.18); border-radius: 20px;
+  cursor: pointer; font-size: 0.82em; font-weight: 600;
+  background: rgba(255,255,255,0.06); color: #999; transition: all 0.18s;
+}
+.btn-diff:hover { background: rgba(255,255,255,0.12); color: #ddd; }
+.btn-diff.active.facile    { border-color: #4caf50; color: #81c784; background: rgba(76,175,80,0.18); }
+.btn-diff.active.moyen     { border-color: #ff9800; color: #ffcc80; background: rgba(255,152,0,0.18); }
+.btn-diff.active.difficile { border-color: #f44336; color: #ef9a9a; background: rgba(244,67,54,0.18); }
+.btn-diff.active.avance    { border-color: #9c27b0; color: #ce93d8; background: rgba(156,39,176,0.18); }
+.btn-diff.active.expert2    { border-color: #e91e63; color: #f48fb1; background: rgba(233,30,99,0.18); }
+.btn-diff.active.diabolique { border-color: #dc2626; color: #fca5a5; background: rgba(220,38,38,0.20);
+                               box-shadow: 0 0 8px rgba(220,38,38,0.35); }
+
+.cell.cell-diag { border-color: rgba(186,104,200,0.5); }
+.cell.cell-diag::after {
+  content: '◆';
+  position: absolute; top: 3px; right: 5px;
+  font-size: 0.5em; color: rgba(186,104,200,0.7);
+  pointer-events: none;
+}
+.cell.cell-diag2 { border-color: rgba(233,30,99,0.5); }
+.cell.cell-diag.cell-diag2 { border-color: rgba(186,104,200,0.5); }
+.cell.cell-diag2::before {
+  content: '◆';
+  position: absolute; top: 3px; right: 5px;
+  font-size: 0.5em; color: rgba(233,30,99,0.7);
+  pointer-events: none;
+}
+.cell.cell-diag.cell-diag2::before { right: 14px; }
+
+.cell-count { font-size: 0.67em; text-align: right; font-weight: 600; line-height: 1; padding-bottom: 3px; }
+.cc-easy   { color: #81c784; }
+.cc-medium { color: #ffcc80; }
+.cc-hard   { color: #ef9a9a; }
+/* Badge cliquable une fois la case validée */
+.cell.valid .cell-count {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  color: #a5d6a7;
+}
+.cell.valid .cell-count:hover { color: #fff; }
+
+/* Popup toutes les réponses */
+.answers-popup {
+  position: fixed; z-index: 250;
+  background: #0f1d2e; border: 1px solid rgba(59,130,246,0.45);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  max-height: 260px; min-width: 185px; max-width: 270px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ap-title {
+  padding: 8px 13px 6px; font-size: 0.75em; color: #60a5fa;
+  font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+.ap-list { overflow-y: auto; flex: 1; padding: 4px 0; }
+.ap-item {
+  padding: 4px 13px; font-size: 0.82em; color: #e2e8f0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; gap: 6px;
+}
+.ap-item:last-child { border-bottom: none; }
+.ap-wiki {
+  margin-left: auto; flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: #666; font-size: 0.95em; padding: 2px 3px;
+  border-radius: 4px; transition: color 0.15s; line-height: 1;
+}
+.ap-wiki:hover { color: #ce93d8; }
+
+/* ── Autocomplete dropdown ───────────────────────────────── */
+#ac-drop {
+  position: fixed; z-index: 300;
+  background: #0f1d2e; border: 1px solid rgba(59,130,246,0.45);
+  border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+  max-height: 210px; overflow-y: auto; display: none;
+  min-width: 190px;
+}
+#ac-drop .ac-item {
+  padding: 7px 13px; cursor: pointer; font-size: 0.84em; color: #e2e8f0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex; align-items: center; gap: 6px;
+}
+#ac-drop .ac-item:last-child { border-bottom: none; }
+#ac-drop .ac-item:hover, #ac-drop .ac-item.ac-sel { background: rgba(59,130,246,0.18); }
+#ac-drop .ac-item em { font-style: normal; color: #38bdf8; font-weight: 700; }
+#ac-drop .ac-item .ac-ok { color: #34d399; font-size: 0.85em; margin-left: auto; }
+.ac-wiki {
+  margin-left: auto; flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: #666; font-size: 0.95em; padding: 2px 3px;
+  border-radius: 4px; transition: color 0.15s; line-height: 1;
+}
+.ac-wiki:hover { color: #ce93d8; }
+#wiki-tooltip {
+  position: fixed; z-index: 500; display: none; pointer-events: none;
+  background: #1a1a2e; border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px; padding: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.65);
+  text-align: center;
+}
+#wiki-tooltip img { display: block; width: 150px; height: 112px; object-fit: cover; border-radius: 5px; }
+#wiki-tooltip .wt-name { font-size: 0.7em; color: #aaa; margin-top: 5px; }
+#wiki-tooltip .wt-msg  { font-size: 0.75em; color: #777; padding: 6px 10px; }
+
+/* ── Panneau liste des pays ───────────────────────────────── */
+.zoo-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); z-index: 200;
+  align-items: flex-start; justify-content: center; padding: 30px 16px;
+}
+.zoo-overlay.show { display: flex; }
+.zoo-panel {
+  background: #0f1d2e; border: 1px solid rgba(59,130,246,0.35);
+  border-radius: 12px; width: 100%; max-width: 500px; max-height: 78vh;
+  display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+.zoo-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.zoo-head h3 { color: #60a5fa; font-size: 0.95em; white-space: nowrap; }
+.zoo-search {
+  flex: 1; background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+  color: #e2e8f0; padding: 6px 10px; font-size: 0.85em; outline: none;
+}
+.zoo-search:focus { border-color: rgba(59,130,246,0.6); }
+.zoo-close { background: none; border: none; color: #64748b; font-size: 1.2em; cursor: pointer; flex-shrink: 0; }
+.zoo-close:hover { color: #e2e8f0; }
+.zoo-meta { font-size: 0.75em; color: #64748b; padding: 5px 16px 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.zoo-list { overflow-y: auto; flex: 1; }
+.zoo-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px; cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.13s;
+}
+.zoo-item:hover { background: rgba(59,130,246,0.12); }
+.zoo-item .zi-name { font-size: 0.88em; color: #e2e8f0; flex: 1; }
+.zoo-item .zi-name em { font-style: normal; color: #38bdf8; font-weight: 700; }
+.zoo-item .zi-tag {
+  font-size: 0.66em; border-radius: 4px; padding: 1px 6px; white-space: nowrap;
+}
+.zi-tag.classe  { color: #7dd3fc; background: rgba(56,189,248,0.12); }
+.zoo-item.used  { opacity: 0.35; }
+
+@media (max-width: 620px) {
+  body { padding: 10px 6px; }
+  h1 { font-size: 1.55em; }
+  .subtitle { font-size: 0.78em; margin-bottom: 12px; }
+
+  .diff-bar { gap: 5px; margin-bottom: 10px; }
+  .btn-diff { padding: 5px 11px; font-size: 0.76em; }
+  .controls { gap: 6px; margin-bottom: 10px; }
+  button { padding: 8px 12px; font-size: 0.8em; }
+
+  /* Colonnes en vw : la grille tient dans le viewport sans scroll horizontal
+     21vw (label) + 3×25vw (cases) + 3×2px (gaps) ≈ 96vw → OK sur 320–430px */
+  .grid { grid-template-columns: 21vw repeat(3, 25vw); gap: 2px; }
+  .col-rule, .row-rule { font-size: 0.6em; padding: 5px 3px; min-height: 44px; line-height: 1.25; }
+  .cell { min-height: 76px; padding: 5px; gap: 4px; }
+  /* 16px MINIMUM sur iOS : en dessous le navigateur zoome et casse le layout */
+  .cell input { font-size: 16px; padding: 4px 6px; }
+  .cell-count { font-size: 0.57em; }
+  .cell-msg { font-size: 0.65em; }
+
+  .zoo-panel { max-height: 70vh; }
+}
+</style>
+</head>
+<body>
+
+<h1>Sudogeo</h1>
+<p class="subtitle">Trouvez un pays respectant la règle de sa ligne <strong>ET</strong> de sa colonne</p>
+
+<div class="diff-bar">
+  <label>Difficulté :</label>
+  <button class="btn-diff facile"     onclick="setDifficulty('facile')">&#127807; Facile</button>
+  <button class="btn-diff moyen active" onclick="setDifficulty('moyen')">&#129418; Moyen</button>
+  <button class="btn-diff difficile"  onclick="setDifficulty('difficile')">&#128293; Difficile</button>
+  <button class="btn-diff avance"     onclick="setDifficulty('avance')">&#10038; Expert</button>
+  <button class="btn-diff expert2"      onclick="setDifficulty('expert2')">&#10022; Expert +</button>
+  <button class="btn-diff diabolique"  onclick="setDifficulty('diabolique')">&#128520; Diabolique</button>
+</div>
+<div class="controls">
+  <button class="btn-new"  onclick="newGame()">&#128260; Nouvelle grille</button>
+  <button class="btn-hint" style="background:#1565c0" onclick="openZoo()">&#127758; Liste des pays</button>
+</div>
+<div class="controls controls-solver">
+  <button class="btn-solver" id="btn-solve-cell" onclick="solveCell()" disabled>&#127919; Solver la case</button>
+  <button class="btn-solver" onclick="solveAll()">&#9889; Tout valider</button>
+</div>
+
+<div id="ac-drop"></div>
+<div id="wiki-tooltip"></div>
+
+<div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
+  <div class="zoo-panel">
+    <div class="zoo-head">
+      <h3>&#127758; Pays</h3>
+      <input class="zoo-search" id="zoo-search" type="text" placeholder="Rechercher un pays..." autocomplete="off" spellcheck="false">
+      <button class="zoo-close" onclick="closeZoo()">&#10005;</button>
+    </div>
+    <div class="zoo-meta" id="zoo-meta"></div>
+    <div class="zoo-list" id="zoo-list"></div>
+  </div>
+</div>
+<div class="score" id="score">0 / 9 cases validées</div>
+<div class="potential-score" id="potential-score"></div>
+<div class="personal-best" id="personal-best"></div>
+<div id="no-puzzle" class="no-puzzle"></div>
+
+<div class="grid-wrap">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="overlay" id="victory" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="overlay-box" style="position:relative">
+    <button onclick="document.getElementById('victory').classList.remove('show')"
+      style="position:absolute;top:10px;right:12px;background:none;border:none;color:#a8d5a8;font-size:1.3em;cursor:pointer;padding:0;line-height:1">&#10005;</button>
+    <h2>&#127881; Bravo !</h2>
+    <p>Vous avez complété la grille avec succès !</p>
+    <div id="victory-score"></div>
+    <button class="btn-new" onclick="newGame();document.getElementById('victory').classList.remove('show')">Nouvelle partie</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// DATASET ANIMAUX — VERSION 2 (enrichie + champ couleur)
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Format de chaque entrée :
+// [nom, classe, regime, pattes, vole, nage, domestique, nocturne, venimeux,
+//  pelage, pond, menace, france, endemique, aquatique, solitaire,
+//  migratoire, nb_mots, description, couleur[]]
+//
+// Légende des valeurs :
+//   0 = non   1 = oui   2 = les deux / semi / partiel
+//
+// Champs :
+//   nom        : nom français de l'animal
+//   classe     : mammifère, oiseau, reptile, amphibien, poisson, insecte,
+//                arachnide, crustacé, mollusque, cnidaire, échinoderme,
+//                annélide, myriapode, xiphosure
+//   regime     : carnivore, herbivore, omnivore, insectivore, granivore,
+//                nectarivore, charognard, filtreur
+//   pattes     : nombre de pattes (0, 2, 4, 6, 8, 14, 30, 42, 100, 200...)
+//   vole       : 0/1/2
+//   nage       : 0/1/2
+//   domestique : 0/1
+//   nocturne   : 0/1/2 (2 = crépusculaire ou mixte)
+//   venimeux   : 0/1/2
+//   pelage     : 0/1 (poils / fourrure)
+//   pond       : 0/1 (ponte d'œufs)
+//   menace     : 0/1 (espèce menacée UICN EN/VU/CR)
+//   france     : 0/1 (présent naturellement en France métropolitaine)
+//   endemique  : 0/1 (espèce endémique d'une zone restreinte)
+//   aquatique  : 0/1/2 (1=pleinement aquatique, 2=semi-aquatique)
+//   solitaire  : 0/1 (mode de vie solitaire)
+//   migratoire : 0/1 (migrations saisonnières significatives)
+//   nb_mots    : nombre de mots dans le nom français
+//   description: courte description
+//   couleur    : tableau de couleurs principales
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+
+// ─── Parser CSV ─────────────────────────────────────────────
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+// ─── Helpers population / superficie ────────────────────────
+function parsePop(s) {
+  const v = (s || '').replace(/\s/g, '').replace(',', '.');
+  if (v.endsWith('M')) return parseFloat(v) * 1e6;
+  if (v.endsWith('K')) return parseFloat(v) * 1e3;
+  return parseFloat(v) || 0;
+}
+function popGroupe(n) {
+  if (n < 1e6)   return '<1M';
+  if (n < 10e6)  return '1M-10M';
+  if (n < 50e6)  return '10M-50M';
+  if (n < 200e6) return '50M-200M';
+  return '>200M';
+}
+function supGroupe(km2) {
+  if (km2 < 10000)   return '<10k';
+  if (km2 < 100000)  return '10k-100k';
+  if (km2 < 500000)  return '100k-500k';
+  if (km2 < 2000000) return '500k-2M';
+  return '>2M';
+}
+// Vérifie si un pays appartient à une sous-région donnée (gère les "/" composés)
+function inReg(p, r) {
+  return p.region.split('/').map(s => s.trim()).includes(r);
+}
+
+// ─── Construire les objets pays ─────────────────────────────
+function buildCountry(row) {
+  const [code, nom, continent, region, pop_s, sup_s,
+         cote_s, enc_s, ile_s, voisins_s,
+         langue, nb_lang_s, , ue_s, , climat,
+         flag_col_s, flag_multi_s, flag_el_s,
+         religion, indice_csv] = row;
+
+  const pop_n = parsePop(pop_s);
+  const sup_n = parseInt(sup_s) || 0;
+  const cote_maritime       = cote_s      === 'True';
+  const enclave             = enc_s       === 'True';
+  const ile                 = ile_s       === 'True';
+  const nb_voisins          = parseInt(voisins_s) || 0;
+  const nb_langues_off      = parseInt(nb_lang_s) || 1;
+  const ue                  = ue_s        === 'True';
+  const flag_couleurs       = (flag_col_s || '').split(',').map(s => s.trim()).filter(Boolean);
+  const drapeau_multicolore = flag_multi_s === 'True';
+  const flag_elements       = (flag_el_s || '').trim() === 'aucun' ? []
+    : (flag_el_s || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  const clean = nom.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-zA-Z]/g,"").toLowerCase();
+  const lettres = clean.length;
+  const pL = clean[0];
+  const dL = clean[clean.length - 1];
+  const cnt = c => clean.includes(c);
+  const nombreVoyelles = [...clean].filter(c => "aeiou".includes(c)).length;
+  const nb_mots = nom.trim().split(/[\s\-]+/).filter(Boolean).length;
+  const _norm = nom.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()
+    .replace(/[-']/g, ' ').replace(/[^a-z ]/g,"").replace(/\s+/g,' ').trim();
+
+  return {
+    code, nom, continent, region,
+    population_groupe: popGroupe(pop_n), superficie_groupe: supGroupe(sup_n),
+    cote_maritime, enclave, ile, nb_voisins,
+    langue, nb_langues_off, ue, climat,
+    flag_couleurs, drapeau_multicolore, flag_elements,
+    religion: religion || '',
+    lettres, premiereLettre: pL, derniereLettre: dL,
+    memeLettrePremiereDerniere: pL === dL,
+    contientA: cnt('a'), contientE: cnt('e'), contientI: cnt('i'),
+    contientO: cnt('o'), contientU: cnt('u'),
+    nombreVoyelles, nb_mots,
+    indice: indice_csv || `${region} — climat ${climat}`,
+    _norm
+  };
+}
+
+let COUNTRIES = [];
+let COUNTRY_INDEX = new Map();
+let COUNTRIES_SORTED = [];
+
+async function loadCountries() {
+  const res = await fetch('dataset_pays_corrige.csv');
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  COUNTRIES = lines.slice(1).map(line => buildCountry(parseCSVLine(line)));
+  COUNTRY_INDEX = new Map(COUNTRIES.map(p => [p._norm, p]));
+  COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+}
+
+// ═══════════════════════════════════════════════════════════
+// CATALOGUE DE RÈGLES
+// ═══════════════════════════════════════════════════════════
+// g = famille de règle. Au plus une règle par famille dans une grille.
+//   "len"  longueur du nom   "nv"   nombre de voyelles
+//   "lettre" présence d'une voyelle   "pl"   première lettre   "dl"  dernière lettre
+//   "cl"   classe biologique   "re"   régime alimentaire   "pt"   pattes
+//   "vole" vol   "nage" nage   "dom" domestique   "noc" nocturne   "ven" venimeux
+//   "pond" ponte   "pel" pelage   "men" menacé   "fra" présent France
+//   "sol"  solitaire   "mig" migrateur   "nb"  nb mots   "aq"  aquatique
+//   "coul" couleur principale
+const RULES = [
+  // ── Nom ────────────────────────────────────────────────────
+  { label:"Nom de 4 lettres ou moins",  g:"len", fn: p => p.lettres <= 4 },
+  { label:"Nom de 5 lettres",           g:"len", fn: p => p.lettres === 5 },
+  { label:"Nom de 6 lettres",           g:"len", fn: p => p.lettres === 6 },
+  { label:"Nom de 7 lettres",           g:"len", fn: p => p.lettres === 7 },
+  { label:"Nom de 8 lettres",           g:"len", fn: p => p.lettres === 8 },
+  { label:"Nom de plus de 8 lettres",   g:"len", fn: p => p.lettres > 8 },
+  { label:"Contient la lettre A",       g:"lettre", fn: p => p.contientA },
+  { label:"Contient la lettre E",       g:"lettre", fn: p => p.contientE },
+  { label:"Contient la lettre I",       g:"lettre", fn: p => p.contientI },
+  { label:"Contient la lettre O",       g:"lettre", fn: p => p.contientO },
+  { label:"Contient la lettre U",       g:"lettre", fn: p => p.contientU },
+  { label:"Commence par A",  g:"pl", fn: p => p.premiereLettre === 'a' },
+  { label:"Commence par B",  g:"pl", fn: p => p.premiereLettre === 'b' },
+  { label:"Commence par C",  g:"pl", fn: p => p.premiereLettre === 'c' },
+  { label:"Commence par E",  g:"pl", fn: p => p.premiereLettre === 'e' },
+  { label:"Commence par F",  g:"pl", fn: p => p.premiereLettre === 'f' },
+  { label:"Commence par G",  g:"pl", fn: p => p.premiereLettre === 'g' },
+  { label:"Commence par I",  g:"pl", fn: p => p.premiereLettre === 'i' },
+  { label:"Commence par J",  g:"pl", fn: p => p.premiereLettre === 'j' },
+  { label:"Commence par K",  g:"pl", fn: p => p.premiereLettre === 'k' },
+  { label:"Commence par L",  g:"pl", fn: p => p.premiereLettre === 'l' },
+  { label:"Commence par M",  g:"pl", fn: p => p.premiereLettre === 'm' },
+  { label:"Commence par N",  g:"pl", fn: p => p.premiereLettre === 'n' },
+  { label:"Commence par P",  g:"pl", fn: p => p.premiereLettre === 'p' },
+  { label:"Commence par R",  g:"pl", fn: p => p.premiereLettre === 'r' },
+  { label:"Commence par S",  g:"pl", fn: p => p.premiereLettre === 's' },
+  { label:"Commence par T",  g:"pl", fn: p => p.premiereLettre === 't' },
+  { label:"Se termine par E", g:"dl", fn: p => p.derniereLettre === 'e' },
+  { label:"Se termine par A", g:"dl", fn: p => p.derniereLettre === 'a' },
+  { label:"Se termine par N", g:"dl", fn: p => p.derniereLettre === 'n' },
+  { label:"Se termine par I", g:"dl", fn: p => p.derniereLettre === 'i' },
+  { label:"Se termine par S", g:"dl", fn: p => p.derniereLettre === 's' },
+  { label:"Nom en un seul mot",        g:"nb", fn: p => p.nb_mots === 1 },
+  { label:"Nom de plusieurs mots",     g:"nb", fn: p => p.nb_mots >= 2 },
+  { label:"Au moins 3 voyelles",       g:"nv", fn: p => p.nombreVoyelles >= 3 },
+  { label:"Au moins 4 voyelles",       g:"nv", fn: p => p.nombreVoyelles >= 4 },
+  // ── Continent ──────────────────────────────────────────────
+  { label:"En Europe",    g:"cont", fn: p => p.continent === 'Europe' },
+  { label:"En Afrique",   g:"cont", fn: p => p.continent === 'Afrique' },
+  { label:"En Asie",      g:"cont", fn: p => p.continent === 'Asie' },
+  { label:"En Amériques", g:"cont", fn: p => p.continent === 'Amériques' },
+  { label:"En Océanie",   g:"cont", fn: p => p.continent === 'Océanie' },
+  // ── Région ─────────────────────────────────────────────────
+  { label:"En Afrique du Nord",       g:"reg", fn: p => inReg(p, 'Afrique du Nord') },
+  { label:"En Afrique de l'Ouest",    g:"reg", fn: p => inReg(p, "Afrique de l'Ouest") },
+  { label:"En Afrique de l'Est",      g:"reg", fn: p => inReg(p, "Afrique de l'Est") },
+  { label:"En Afrique centrale",      g:"reg", fn: p => inReg(p, 'Afrique centrale') },
+  { label:"En Afrique australe",      g:"reg", fn: p => inReg(p, 'Afrique australe') },
+  { label:"Corne de l'Afrique",       g:"reg", fn: p => inReg(p, "Corne de l'Afrique") },
+  { label:"En Europe de l'Ouest",     g:"reg", fn: p => inReg(p, "Europe de l'Ouest") },
+  { label:"En Europe du Sud",         g:"reg", fn: p => inReg(p, 'Europe du Sud') },
+  { label:"En Europe du Nord",        g:"reg", fn: p => inReg(p, 'Europe du Nord') },
+  { label:"En Europe centrale",       g:"reg", fn: p => inReg(p, 'Europe centrale') },
+  { label:"En Europe de l'Est",       g:"reg", fn: p => inReg(p, "Europe de l'Est") },
+  { label:"En Asie du Sud-Est",       g:"reg", fn: p => inReg(p, 'Asie du Sud-Est') },
+  { label:"En Asie de l'Ouest",       g:"reg", fn: p => inReg(p, "Asie de l'Ouest") },
+  { label:"Dans le Caucase",          g:"reg", fn: p => inReg(p, 'Caucase') },
+  { label:"En Asie du Sud",           g:"reg", fn: p => inReg(p, 'Asie du Sud') },
+  { label:"En Asie de l'Est",         g:"reg", fn: p => inReg(p, "Asie de l'Est") },
+  { label:"En Asie centrale",         g:"reg", fn: p => inReg(p, 'Asie centrale') },
+  { label:"En Amérique du Sud",       g:"reg", fn: p => inReg(p, 'Amérique du Sud') },
+  { label:"En Amérique centrale",     g:"reg", fn: p => inReg(p, 'Amérique centrale') },
+  { label:"Dans les Caraïbes",        g:"reg", fn: p => inReg(p, 'Caraïbes') },
+  // ── Population ─────────────────────────────────────────────
+  { label:"Population < 1 million",    g:"pop", fn: p => p.population_groupe === '<1M' },
+  { label:"Population 1–10 millions",  g:"pop", fn: p => p.population_groupe === '1M-10M' },
+  { label:"Population 10–50 millions", g:"pop", fn: p => p.population_groupe === '10M-50M' },
+  { label:"Population 50–200 millions",g:"pop", fn: p => p.population_groupe === '50M-200M' },
+  { label:"Population > 200 millions", g:"pop", fn: p => p.population_groupe === '>200M' },
+  // ── Superficie ─────────────────────────────────────────────
+  { label:"Très petit pays (< 10 000 km²)",      g:"sup", fn: p => p.superficie_groupe === '<10k' },
+  { label:"Superficie 10 000–100 000 km²",        g:"sup", fn: p => p.superficie_groupe === '10k-100k' },
+  { label:"Superficie 100 000–500 000 km²",       g:"sup", fn: p => p.superficie_groupe === '100k-500k' },
+  { label:"Grand pays (> 500 000 km²)",           g:"sup", fn: p => ['500k-2M','>2M'].includes(p.superficie_groupe) },
+  { label:"Très grand pays (> 2 000 000 km²)",    g:"sup", fn: p => p.superficie_groupe === '>2M' },
+  // ── Géographie ─────────────────────────────────────────────
+  { label:"A une façade maritime",         g:"cote",  fn: p => p.cote_maritime },
+  { label:"Pays enclavé (sans mer)",       g:"enc",   fn: p => p.enclave },
+  { label:"Pays insulaire (île)",          g:"ile",   fn: p => p.ile },
+  { label:"N'a pas de voisins terrestres", g:"vois0", fn: p => p.nb_voisins === 0 },
+  { label:"A 1 seul voisin terrestre",     g:"vois1", fn: p => p.nb_voisins === 1 },
+  { label:"Plus de 5 voisins terrestres",  g:"vois5", fn: p => p.nb_voisins > 5 },
+  // ── Climat ─────────────────────────────────────────────────
+  { label:"Climat tropical",           g:"clim", fn: p => p.climat === 'tropical' },
+  { label:"Climat aride / désertique", g:"clim", fn: p => p.climat === 'aride' },
+  { label:"Climat tempéré",            g:"clim", fn: p => p.climat === 'tempéré' },
+  { label:"Climat continental",        g:"clim", fn: p => p.climat === 'continental' },
+  { label:"Climat méditerranéen",      g:"clim", fn: p => p.climat === 'méditerranéen' },
+  { label:"Climat montagnard",         g:"clim", fn: p => p.climat === 'montagnard' },
+  // ── Politique ──────────────────────────────────────────────
+  { label:"Membre de l'UE",            g:"ue",      fn: p => p.ue },
+  // ── Langue ─────────────────────────────────────────────────
+  { label:"Langue officielle : Français",   g:"lang", fn: p => p.langue.includes('Français') },
+  { label:"Langue officielle : Anglais",    g:"lang", fn: p => p.langue.includes('Anglais') },
+  { label:"Langue officielle : Espagnol",   g:"lang", fn: p => p.langue.includes('Espagnol') },
+  { label:"Langue officielle : Arabe",      g:"lang", fn: p => p.langue.includes('Arabe') },
+  { label:"Langue officielle : Portugais",  g:"lang", fn: p => p.langue.includes('Portugais') },
+  { label:"Plusieurs langues officielles",  g:"nblang", fn: p => p.nb_langues_off >= 2 },
+  // ── Religion ───────────────────────────────────────────────
+  { label:"Majorité musulmane",             g:"rel", fn: p => p.religion.includes('Islam') },
+  { label:"Majorité chrétienne",            g:"rel", fn: p => p.religion.includes('Christianisme') },
+  { label:"Majorité catholique",            g:"rel", fn: p => p.religion.includes('catholicisme') },
+  { label:"Majorité orthodoxe",             g:"rel", fn: p => p.religion.includes('orthodoxe') },
+  { label:"Majorité protestante",           g:"rel", fn: p => p.religion.includes('protestantisme') },
+  { label:"Majorité bouddhiste",            g:"rel", fn: p => p.religion.includes('Bouddhisme') },
+  { label:"Majorité hindouiste",            g:"rel", fn: p => p.religion.includes('Hindouisme') },
+  { label:"Religion majoritaire : Judaïsme",g:"rel", fn: p => p.religion.includes('Juda') },
+  { label:"Société multireligieuse",        g:"rel", fn: p => p.religion === 'Multireligion' },
+  // ── Drapeau couleurs ───────────────────────────────────────
+  { label:"Drapeau avec du rouge",     g:"fc_r", fn: p => p.flag_couleurs.some(c => ['rouge','bordeaux'].includes(c)) },
+  { label:"Drapeau avec du bleu",      g:"fc_b", fn: p => p.flag_couleurs.includes('bleu') },
+  { label:"Drapeau avec du vert",      g:"fc_v", fn: p => p.flag_couleurs.includes('vert') },
+  { label:"Drapeau avec du blanc",     g:"fc_w", fn: p => p.flag_couleurs.includes('blanc') },
+  { label:"Drapeau avec du noir",      g:"fc_n", fn: p => p.flag_couleurs.includes('noir') },
+  { label:"Drapeau avec du jaune/or",  g:"fc_y", fn: p => p.flag_couleurs.some(c => ['jaune','or'].includes(c)) },
+  // ── Drapeau éléments ───────────────────────────────────────
+  { label:"Drapeau avec une étoile",    g:"fe_st", fn: p => p.flag_elements.some(e => e.includes('étoile')) },
+  { label:"Drapeau avec une croix",     g:"fe_cr", fn: p => p.flag_elements.some(e => e.includes('croix')) },
+  { label:"Drapeau avec un croissant",  g:"fe_cs", fn: p => p.flag_elements.some(e => e.includes('croissant')) },
+  { label:"Drapeau avec des armoiries", g:"fe_ar", fn: p => p.flag_elements.some(e => e.includes('armoiries')) },
+  { label:"Drapeau avec un aigle",      g:"fe_ai", fn: p => p.flag_elements.some(e => e.includes('aigle')) },
+  { label:"Drapeau multicolore (4+ couleurs)", g:"fmc", fn: p => p.drapeau_multicolore },
+];
+
+// ═══════════════════════════════════════════════════════════
+// GÉNÉRATEUR DE PUZZLE
+// ═══════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function cellCandidates(rr, cr, dr, dr2) {
+  return COUNTRIES.filter(p => rr.fn(p) && cr.fn(p) && (!dr || dr.fn(p)) && (!dr2 || dr2.fn(p)));
+}
+
+function getDiagRule(idx) {
+  return (puzzle && puzzle.diagRule  && (idx===0||idx===4||idx===8)) ? puzzle.diagRule  : null;
+}
+function getDiagRule2(idx) {
+  return (puzzle && puzzle.diagRule2 && (idx===2||idx===4||idx===6)) ? puzzle.diagRule2 : null;
+}
+
+// ── Compte les solutions complètes par backtracking (s'arrête à maxCount) ──
+function countSolutions(rowRules, colRules, diagRule, diagRule2, maxCount = 2) {
+  const cands = Array.from({length: 9}, (_, idx) => {
+    const row = Math.floor(idx/3), col = idx%3;
+    const dr  = diagRule  && (idx===0||idx===4||idx===8) ? diagRule  : null;
+    const dr2 = diagRule2 && (idx===2||idx===4||idx===6) ? diagRule2 : null;
+    return cellCandidates(rowRules[row], colRules[col], dr, dr2);
+  });
+  const order = Array.from({length:9}, (_,i) => i)
+    .sort((a,b) => cands[a].length - cands[b].length);
+  let count = 0;
+  const used = new Set();
+  function solve(step) {
+    if (step === 9) { count++; return count >= maxCount; }
+    for (const p of cands[order[step]]) {
+      if (used.has(p.code)) continue;
+      used.add(p.code);
+      if (solve(step + 1)) return true;
+      used.delete(p.code);
+    }
+    return false;
+  }
+  solve(0);
+  return count;
+}
+
+function tryGenerate(diff, minMin, maxMin, maxTries) {
+  const isAvance  = diff === 'avance' || diff === 'expert2';
+  const isExpert2 = diff === 'expert2';
+  const NOM = new Set(['len','lettre','pl','dl','nv']);
+  for (let t = 0; t < maxTries; t++) {
+    const shuffled  = shuffle(RULES);
+    const rowRules  = shuffled.slice(0,3);
+    const colRules  = shuffled.slice(3,6);
+    const diagRule  = isAvance  ? shuffled[6] : null;
+    const diagRule2 = isExpert2 ? shuffled[7] : null;
+    const allRules  = [...rowRules, ...colRules];
+    if (diagRule)  allRules.push(diagRule);
+    if (diagRule2) allRules.push(diagRule2);
+    const groups = allRules.map(r=>r.g);
+    if (new Set(groups).size < allRules.length) continue;
+    if (groups.filter(g => NOM.has(g)).length > 2) continue;
+    let minCount = Infinity;
+    const counts = [];
+    let valid = true;
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const idx = row*3+col;
+        const dr  = diagRule  && (idx===0||idx===4||idx===8) ? diagRule  : null;
+        const dr2 = diagRule2 && (idx===2||idx===4||idx===6) ? diagRule2 : null;
+        const n = cellCandidates(rowRules[row], colRules[col], dr, dr2).length;
+        counts.push(n);
+        if (n === 0) { valid = false; break; }
+        minCount = Math.min(minCount, n);
+      }
+      if (!valid) break;
+    }
+    if (!valid) continue;
+    if (minCount >= minMin && minCount < maxMin)
+      return { rowRules, colRules, diagRule, diagRule2, counts };
+  }
+  return null;
+}
+
+// ── Diabolique : approche constructive ─────────────────────
+// Pré-calcul des règles à pool 12-50 pays + leurs pools
+let DIAB_RULES = [], DIAB_POOLS = [];
+
+function buildDiabRules() {
+  DIAB_RULES = []; DIAB_POOLS = [];
+  for (const r of RULES) {
+    const pool = COUNTRIES.filter(p => r.fn(p));
+    if (pool.length >= 12 && pool.length <= 50) {
+      DIAB_RULES.push(r);
+      DIAB_POOLS.push(pool);
+    }
+  }
+}
+
+function tryGenerateDiabolique(maxTries = 800) {
+  if (DIAB_RULES.length < 6) return null;
+  const MIN_C = 2, MAX_C = 6;
+  const idxArr = Array.from({length: DIAB_RULES.length}, (_, i) => i);
+
+  for (let t = 0; t < maxTries; t++) {
+    // 1. Tirer 3 règles-lignes parmi DIAB_RULES
+    const [ri0, ri1, ri2] = shuffle(idxArr);
+    const rowRules = [DIAB_RULES[ri0], DIAB_RULES[ri1], DIAB_RULES[ri2]];
+    const rowPools = [DIAB_POOLS[ri0], DIAB_POOLS[ri1], DIAB_POOLS[ri2]];
+    const usedGroups = new Set(rowRules.map(r => r.g));
+    if (usedGroups.size < 3) continue;
+
+    // 2. Pour chaque colonne, chercher greedy une règle qui donne 2-6 candidats
+    //    dans TOUTES les 3 cases de la colonne
+    const colRules = [];
+    let colOk = true;
+    for (let col = 0; col < 3; col++) {
+      const valid = [];
+      for (let ci = 0; ci < DIAB_RULES.length; ci++) {
+        const cr = DIAB_RULES[ci];
+        if (usedGroups.has(cr.g)) continue;
+        let ok = true;
+        for (let row = 0; row < 3; row++) {
+          const n = rowPools[row].filter(p => cr.fn(p)).length;
+          if (n < MIN_C || n > MAX_C) { ok = false; break; }
+        }
+        if (ok) valid.push(cr);
+      }
+      if (!valid.length) { colOk = false; break; }
+      const chosen = valid[Math.floor(Math.random() * valid.length)];
+      colRules.push(chosen);
+      usedGroups.add(chosen.g);
+    }
+    if (!colOk) continue;
+
+    // 3. Compter les candidats par case
+    const counts = [];
+    for (let row = 0; row < 3; row++)
+      for (let col = 0; col < 3; col++)
+        counts.push(rowPools[row].filter(p => colRules[col].fn(p)).length);
+
+    // 4. Vérifier l'unicité (rapide : 2-6 candidats/case max)
+    if (countSolutions(rowRules, colRules, null, null) !== 1) continue;
+
+    return { rowRules, colRules, diagRule: null, diagRule2: null, counts };
+  }
+  return null;
+}
+
+function generatePuzzle(diff='moyen') {
+  if (diff === 'diabolique') {
+    return tryGenerateDiabolique(800)
+        || tryGenerate('difficile', 1, 3, 800)
+        || tryGenerate('moyen', 3, 8, 400);
+  }
+  const { minMin, maxMin } = DIFF_CFG[diff] || DIFF_CFG.moyen;
+  const r1 = tryGenerate(diff, minMin, maxMin, 1000);
+  if (r1) return r1;
+  const r2 = tryGenerate(diff, minMin, Infinity, 800);
+  if (r2) return r2;
+  return tryGenerate(diff, 1, Infinity, 1200);
+}
+
+// ═══════════════════════════════════════════════════════════
+// NORMALISATION SAISIE
+// ═══════════════════════════════════════════════════════════
+function normInput(str) {
+  return str.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim()
+    .replace(/[-']/g,' ').replace(/[^a-z ]/g,"").replace(/\s+/g,' ').trim();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIFFICULTÉ
+// ═══════════════════════════════════════════════════════════
+// Seuils sur le minimum de candidats parmi les 9 cases
+//   facile    : min >= 8
+//   moyen     : min 3–7
+//   difficile : min 1–2
+//   avance    : min >= 1, + règle diagonale sur les cases 0, 4, 8
+const DIFF_CFG = {
+  facile:     { minMin: 8, maxMin: Infinity },
+  moyen:      { minMin: 3, maxMin: 8 },
+  difficile:  { minMin: 1, maxMin: 3 },
+  avance:     { minMin: 1, maxMin: Infinity },
+  expert2:    { minMin: 1, maxMin: Infinity },
+  diabolique: { minMin: 2, maxMin: Infinity }, // unique solution + ≥2 candidats/case
+};
+let difficulty = 'moyen';
+
+function setDifficulty(d) {
+  difficulty = d;
+  document.querySelectorAll('.btn-diff').forEach(b => {
+    b.classList.toggle('active', b.classList.contains(d));
+  });
+  newGame();
+  renderPersonalBest();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAT
+// ═══════════════════════════════════════════════════════════
+let puzzle      = null;
+let states      = Array(9).fill(null);   // null | 'valid' | 'invalid'
+let selectedIdx = -1;                    // case actuellement sélectionnée
+let hintStates  = Array.from({length:9}, () => new Set()); // norms d'animaux déjà montrés par case
+let lastActiveIdx = -1;
+let hintCount     = 0;              // total hints (legacy, pour compatibilité)
+let solveCount    = 0;              // total solver (legacy)
+let hintPenalties  = Array(9).fill(0); // pénalité hint accumulée par case
+let resetPenalties = Array(9).fill(0); // pénalité retrait d'une case validée
+let wrongPenalties = Array(9).fill(0); // pénalité réponse invalide
+let solvedByBot    = Array(9).fill(false); // cases résolues par le solver
+
+// ═══════════════════════════════════════════════════════════
+// SÉLECTION DE CASE
+// ═══════════════════════════════════════════════════════════
+function selectCell(idx) {
+  if (selectedIdx === idx) return;
+  // Retirer la surbrillance de l'ancienne case
+  if (selectedIdx >= 0) {
+    document.querySelector(`.cell[data-idx="${selectedIdx}"]`)?.classList.remove('selected');
+  }
+  selectedIdx = idx;
+  document.querySelector(`.cell[data-idx="${idx}"]`)?.classList.add('selected');
+  updateHintBtn();
+}
+
+function updateHintBtn() {
+  const solve = document.getElementById('btn-solve-cell');
+  if (solve) solve.disabled = selectedIdx < 0 || states[selectedIdx] === 'valid';
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDU
+// ═══════════════════════════════════════════════════════════
+function newGame() {
+  puzzle = generatePuzzle(difficulty);
+  if (!puzzle) return; // ne devrait jamais arriver
+  states      = Array(9).fill(null);
+  hintStates  = Array.from({length:9}, () => new Set());
+  selectedIdx = -1;
+  hintCount     = 0;
+  solveCount    = 0;
+  hintPenalties  = Array(9).fill(0);
+  resetPenalties = Array(9).fill(0);
+  wrongPenalties = Array(9).fill(0);
+  solvedByBot    = Array(9).fill(false);
+  closeAnswersPopup();
+  renderGrid();
+  updateHintBtn();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  // En mode Expert+ : 5 colonnes (coin-gauche + 3 cols + coin-droit)
+  grid.style.gridTemplateColumns = puzzle.diagRule2
+    ? '160px repeat(3, 150px) 160px'
+    : '';
+
+  // Coin haut-gauche : règle diagonale ↘ ou badge Diabolique
+  if (puzzle.diagRule) {
+    const corner = document.createElement('div');
+    corner.className = 'diag-rule';
+    corner.innerHTML = `<span>↘</span><em>${puzzle.diagRule.label}</em>`;
+    grid.appendChild(corner);
+  } else if (difficulty === 'diabolique') {
+    const corner = document.createElement('div');
+    corner.className = 'diag-rule';
+    corner.style.cssText = 'background:rgba(220,38,38,0.15);border-color:rgba(220,38,38,0.4);color:#fca5a5;font-size:0.72em';
+    corner.innerHTML = `<span style="font-size:1.4em">😈</span><em>Solution<br>unique</em>`;
+    grid.appendChild(corner);
+  } else {
+    grid.appendChild(Object.assign(document.createElement('div'), { className:'corner' }));
+  }
+
+  // En-têtes colonnes
+  puzzle.colRules.forEach(r => {
+    const d = document.createElement('div');
+    d.className = 'col-rule';
+    d.textContent = r.label;
+    grid.appendChild(d);
+  });
+
+  // Coin haut-droit : règle diagonale ↙ (Expert+ uniquement)
+  if (puzzle.diagRule2) {
+    const corner2 = document.createElement('div');
+    corner2.className = 'diag-rule';
+    corner2.style.cssText = 'background:rgba(233,30,99,0.12);border-color:rgba(233,30,99,0.4);color:#f48fb1';
+    corner2.innerHTML = `<span>↙</span><em>${puzzle.diagRule2.label}</em>`;
+    grid.appendChild(corner2);
+  }
+
+  // Lignes
+  for (let row = 0; row < 3; row++) {
+    const rh = document.createElement('div');
+    rh.className = 'row-rule';
+    rh.textContent = puzzle.rowRules[row].label;
+    grid.appendChild(rh);
+
+    for (let col = 0; col < 3; col++) {
+      const idx = row*3+col;
+      const cell = document.createElement('div');
+      const isDiag  = puzzle.diagRule  && (idx===0||idx===4||idx===8);
+      const isDiag2 = puzzle.diagRule2 && (idx===2||idx===4||idx===6);
+      cell.className = 'cell' + (isDiag ? ' cell-diag' : '') + (isDiag2 ? ' cell-diag2' : '');
+      cell.dataset.idx = idx;
+      // Sélection de la case au clic sur son fond
+      cell.addEventListener('click', e => {
+        if (e.target !== inp) selectCell(idx);
+      });
+
+      const n = puzzle.counts[idx];
+      const countEl = document.createElement('div');
+      countEl.className = 'cell-count ' + (n >= 10 ? 'cc-easy' : n >= 4 ? 'cc-medium' : 'cc-hard');
+      countEl.textContent = n + ' réponse' + (n > 1 ? 's' : '');
+      countEl.addEventListener('click', e => {
+        e.stopPropagation();
+        if (states[idx] === 'valid' && states.every(s => s === 'valid')) showAnswersPopup(idx, countEl);
+      });
+
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = 'Pays...';
+      inp.autocomplete = 'off';
+      inp.spellcheck = false;
+      inp.addEventListener('focus', () => {
+        lastActiveIdx = idx;
+        selectCell(idx);
+      });
+      inp.addEventListener('input', () => {
+        hintStates[idx].clear();
+        if (!inp.value.trim()) { clearCell(idx); acHide(); }
+        else acShow(idx, inp.value);
+      });
+      inp.addEventListener('keydown', e => {
+        const drop = document.getElementById('ac-drop');
+        if (drop.style.display === 'block') {
+          if (e.key === 'ArrowDown') { e.preventDefault(); acMove(1); return; }
+          if (e.key === 'ArrowUp')   { e.preventDefault(); acMove(-1); return; }
+          if (e.key === 'Escape')    { acHide(); return; }
+          if (e.key === 'Enter') {
+            const sel = drop.querySelector('.ac-sel');
+            if (sel) { e.preventDefault(); acPick(sel.dataset.nom); return; }
+          }
+        }
+        if (e.key === 'Enter') { acHide(); validateCell(idx); }
+      });
+      inp.addEventListener('blur', () => {
+        setTimeout(() => {
+          acHide();
+          if (inp.value.trim()) validateCell(idx);
+        }, 160);
+      });
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'cell-img-wrap';
+      imgWrap.id = 'cellimg'+idx;
+      imgWrap.appendChild(document.createElement('img'));
+
+      const hintBtn = document.createElement('button');
+      hintBtn.className = 'btn-cell-hint';
+      hintBtn.textContent = '💡 Indice';
+      hintBtn.addEventListener('click', e => { e.stopPropagation(); giveHint(idx); });
+
+      const msg = document.createElement('div');
+      msg.className = 'cell-msg';
+      msg.id = 'msg'+idx;
+
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn-reset-cell';
+      resetBtn.textContent = '✕';
+      resetBtn.title = 'Modifier la réponse';
+      resetBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const pen = Math.ceil(cellBasePoints(idx) / 3);
+        resetPenalties[idx] += pen;
+        states[idx] = null;
+        setCellState(idx, null, '');
+        hideCellImage(idx);
+        // Afficher brièvement la pénalité
+        const msgEl = document.getElementById('msg' + idx);
+        msgEl.textContent = `−${pen} pt${pen > 1 ? 's' : ''}`;
+        msgEl.style.color = '#ef9a9a';
+        setTimeout(() => { if (states[idx] === null) msgEl.textContent = ''; msgEl.style.color = ''; }, 1200);
+        hintStates[idx].clear();
+        updateScore();
+        updateHintBtn();
+        selectCell(idx);
+        inp.focus();
+      });
+
+      const cellFooter = document.createElement('div');
+      cellFooter.className = 'cell-footer';
+      cellFooter.append(msg, resetBtn);
+
+      cell.append(countEl, inp, imgWrap, hintBtn, cellFooter);
+      grid.appendChild(cell);
+    }
+
+    // Colonne vide à droite en mode Expert+
+    if (puzzle.diagRule2) {
+      grid.appendChild(document.createElement('div'));
+    }
+  }
+
+  updateScore();
+}
+
+function getInput(idx) {
+  const cell = document.querySelector(`.cell[data-idx="${idx}"]`);
+  return cell ? cell.querySelector('input') : null;
+}
+
+function clearCell(idx) {
+  states[idx] = null;
+  setCellState(idx, null, '');
+  hideCellImage(idx);
+  updateScore();
+}
+
+function showCellImage(idx, code) {
+  const wrap = document.getElementById('cellimg'+idx);
+  const inp  = getInput(idx);
+  if (!wrap || !inp) return;
+  inp.style.display = 'none';
+  wrap.style.display = 'flex';
+  const img = wrap.querySelector('img');
+  img.src = `https://flagcdn.com/w160/${code.toLowerCase()}.png`;
+  img.alt = code;
+  img.style.objectFit = 'contain';
+}
+
+function hideCellImage(idx) {
+  const wrap = document.getElementById('cellimg'+idx);
+  const inp  = getInput(idx);
+  if (wrap) wrap.style.display = 'none';
+  if (inp)  inp.style.display  = '';
+}
+
+function validateCell(idx) {
+  const inp = getInput(idx);
+  if (!inp || !inp.value.trim()) return;
+  const q = normInput(inp.value);
+  const country = COUNTRY_INDEX.get(q) || COUNTRIES.find(p => p._norm === q);
+  const row = Math.floor(idx/3), col = idx%3;
+  const rr = puzzle.rowRules[row], cr = puzzle.colRules[col];
+
+  if (!country) {
+    states[idx] = 'invalid';
+    setCellState(idx, 'invalid', `"${inp.value}" non trouvé dans la base`);
+  } else {
+    const normVal = normInput(inp.value);
+    const isDuplicate = Array.from({length:9}, (_,i) => i)
+      .filter(i => i !== idx && states[i] === 'valid')
+      .some(i => normInput(getInput(i)?.value || '') === normVal);
+    if (isDuplicate) {
+      states[idx] = 'invalid';
+      setCellState(idx, 'invalid', `${country.nom} est déjà utilisé dans une autre case`);
+    } else if (!rr.fn(country)) {
+      states[idx] = 'invalid';
+      wrongPenalties[idx] += Math.ceil(cellBasePoints(idx) / 4);
+      setCellState(idx, 'invalid', `Règle ligne non respectée — −${Math.ceil(cellBasePoints(idx)/4)} pt`);
+    } else if (!cr.fn(country)) {
+      states[idx] = 'invalid';
+      wrongPenalties[idx] += Math.ceil(cellBasePoints(idx) / 4);
+      setCellState(idx, 'invalid', `Règle colonne non respectée — −${Math.ceil(cellBasePoints(idx)/4)} pt`);
+    } else if (getDiagRule(idx) && !getDiagRule(idx).fn(country)) {
+      states[idx] = 'invalid';
+      wrongPenalties[idx] += Math.ceil(cellBasePoints(idx) / 4);
+      setCellState(idx, 'invalid', `Diagonale ↘ non respectée — −${Math.ceil(cellBasePoints(idx)/4)} pt`);
+    } else if (getDiagRule2(idx) && !getDiagRule2(idx).fn(country)) {
+      states[idx] = 'invalid';
+      wrongPenalties[idx] += Math.ceil(cellBasePoints(idx) / 4);
+      setCellState(idx, 'invalid', `Diagonale ↙ non respectée — −${Math.ceil(cellBasePoints(idx)/4)} pt`);
+    } else {
+      states[idx] = 'valid';
+      setCellState(idx, 'valid', `✓ ${country.nom}${rarityStars(country)}`);
+      showCellImage(idx, country.code);
+    }
+  }
+  if (states[idx] !== 'valid') hideCellImage(idx);
+  hintStates[idx].clear();
+  updateScore();
+  updateHintBtn();
+  checkVictory();
+}
+
+
+function setCellState(idx, state, msg) {
+  const cell = document.querySelector(`.cell[data-idx="${idx}"]`);
+  if (!cell) return;
+  const sel  = selectedIdx === idx ? ' selected' : '';
+  const diag  = getDiagRule(idx)  ? ' cell-diag'  : '';
+  const diag2 = getDiagRule2(idx) ? ' cell-diag2' : '';
+  cell.className = 'cell' + diag + diag2 + sel + (state ? ' '+state : '');
+  document.getElementById('msg'+idx).textContent = msg;
+}
+
+// ── Helpers scoring ────────────────────────────────────────
+function cellBasePoints(idx) {
+  const n = puzzle ? puzzle.counts[idx] : 9;
+  return Math.max(1, Math.round(7 / Math.sqrt(n)));
+}
+
+// ── Notoriété composite : population + bonus thématique ─────
+const FAME_BONUS = {
+  // G7 + membres permanents CSNU
+  'US':38,'GB':35,'FR':35,'DE':35,'CN':35,'RU':32,'JP':35,'IT':30,'CA':30,
+  // G20 hors G7
+  'IN':30,'BR':28,'AU':28,'KR':26,'MX':25,'ID':22,'SA':22,'TR':25,'AR':20,'ZA':20,
+  // Europe reconnue (tourisme, diplomatie, culture)
+  'ES':25,'NL':22,'BE':20,'SE':22,'PL':18,'NO':20,'CH':26,'AT':18,'DK':18,
+  'FI':16,'PT':18,'GR':22,'IE':18,'CZ':15,'HU':14,'UA':28,'IS':18,'LU':18,
+  'RO':14,'BG':12,'HR':12,'SK':12,'SI':10,'RS':12,'BA':10,'AL':10,'MK':8,
+  'LT':10,'LV':10,'EE':10,'BY':14,'MD':8,'GE':12,'AM':10,'AZ':12,
+  // Moyen-Orient / actualité internationale
+  'IL':28,'IR':22,'AE':26,'QA':20,'KW':14,'IQ':18,'SY':15,'LB':15,
+  'JO':12,'YE':12,'OM':10,'BH':12,'AF':16,'PK':18,
+  // Asie / Pacifique
+  'SG':30,'TH':22,'VN':16,'MY':16,'PH':14,'BD':18,'MM':10,'KH':10,
+  'LA':8,'MN':8,'KP':22,'LK':10,'NP':10,'BT':5,'NZ':22,'KZ':12,
+  'UZ':8,'TM':6,'TJ':6,'KG':6,
+  // Afrique
+  'NG':20,'EG':22,'ET':15,'KE':15,'TZ':12,'GH':12,'MA':20,'DZ':15,
+  'TN':14,'LY':12,'CM':10,'CD':12,'AO':10,'SN':10,'ZW':10,'ZM':8,
+  'MZ':8,'SD':10,'SO':10,'RW':10,'CI':10,'UG':10,'MG':8,
+  // Amériques
+  'CL':16,'CO':16,'PE':14,'VE':12,'EC':10,'BO':10,'UY':12,'PY':6,
+  'GY':6,'SR':5,'HT':12,'CU':16,'DO':10,'JM':12,'GT':10,'HN':8,
+  'NI':8,'CR':12,'PA':14,'BZ':6,'BB':8,'TT':8,
+  // Petits États très médiatisés
+  'VA':18,'MC':15,'SM':12,'AD':10,'MT':12,'LI':8,'MV':8,
+};
+
+function fameScore(country) {
+  const popBase = {'<1M':5,'1M-10M':16,'10M-50M':26,'50M-200M':38,'>200M':50};
+  let score = popBase[country.population_groupe] || 16;
+  if (country.ue) score += 8;
+  const bigLangs = ['Anglais','Espagnol','Français','Arabe','Portugais','Allemand','Mandarin','Russe'];
+  if (bigLangs.some(l => country.langue.includes(l))) score += 5;
+  score += FAME_BONUS[country.code] || 0;
+  return score;
+}
+
+function rarityMult(country) {
+  if (!country) return 1.0;
+  const fame = fameScore(country);
+  // fame ~5–95 → multiplicateur 1.0 (très connu) à ~3.9 (très obscur)
+  const raw = 4.0 - 3.0 * Math.min(1, fame / 80);
+  return Math.max(1.0, Math.round(raw * 10) / 10);
+}
+
+function rarityStars(country) {
+  const m = rarityMult(country);
+  if (m >= 3.0) return ' ★★★';
+  if (m >= 2.0) return ' ★★';
+  if (m >= 1.5) return ' ★';
+  return '';
+}
+
+function computeScore() {
+  let total = 0;
+  let totalHintPenalty = 0;
+  let botCells = 0;
+  const cellScores = [];
+
+  for (let idx = 0; idx < 9; idx++) {
+    if (states[idx] !== 'valid') { cellScores.push(null); continue; }
+
+    const base = cellBasePoints(idx);
+
+    if (solvedByBot[idx]) {
+      botCells++;
+      cellScores.push({ pts: 0, gross: 0, penalty: 0, bot: true });
+      continue;
+    }
+
+    const inp = getInput(idx);
+    const q = normInput(inp?.value || '');
+    const country = COUNTRY_INDEX.get(q);
+    const rm      = rarityMult(country);
+    const gross   = Math.round(base * rm);
+    const pen     = hintPenalties[idx] + resetPenalties[idx] + wrongPenalties[idx];
+    const pts     = Math.max(0, gross - pen);
+    total += pts;
+    totalHintPenalty += hintPenalties[idx];
+    cellScores.push({ pts, gross, penalty: pen, hintPen: hintPenalties[idx], resetPen: resetPenalties[idx], wrongPen: wrongPenalties[idx], bot: false, rm });
+  }
+
+  const totalResetPenalty = resetPenalties.reduce((a,b) => a+b, 0);
+  const totalWrongPenalty = wrongPenalties.reduce((a,b) => a+b, 0);
+  return { total, totalHintPenalty, totalResetPenalty, totalWrongPenalty, botCells, cellScores };
+}
+
+function updateScore() {
+  const n = states.filter(s => s === 'valid').length;
+  document.getElementById('score').textContent = `${n} / 9 cases validées`;
+  if (!puzzle) return;
+  const { total } = computeScore();
+  const ps = document.getElementById('potential-score');
+  if (ps) ps.innerHTML = `Score : <span>${total} pts</span>`;
+}
+
+function getUnusedCands(idx) {
+  const row = Math.floor(idx/3), col = idx%3;
+  const usedNorms = new Set(
+    Array.from({length:9}, (_,i) => i)
+      .filter(i => i !== idx && states[i] === 'valid')
+      .map(i => normInput(getInput(i)?.value || ''))
+      .filter(Boolean)
+  );
+  return cellCandidates(puzzle.rowRules[row], puzzle.colRules[col], getDiagRule(idx), getDiagRule2(idx))
+    .filter(p => !usedNorms.has(p._norm));
+}
+
+function solveCell() {
+  if (selectedIdx < 0 || states[selectedIdx] === 'valid') return;
+  const cands = getUnusedCands(selectedIdx);
+  if (!cands.length) return;
+  const pick = cands[Math.floor(Math.random() * cands.length)];
+  const inp = getInput(selectedIdx);
+  if (!inp) return;
+  inp.value = pick.nom;
+  solveCount++;
+  solvedByBot[selectedIdx] = true;
+  validateCell(selectedIdx);
+}
+
+function solveAll() {
+  for (let pass = 0; pass < 9; pass++) {
+    const remaining = Array.from({length:9}, (_,i) => i).filter(i => states[i] !== 'valid');
+    if (!remaining.length) break;
+    // Choisir la case avec le moins de candidats disponibles
+    let bestIdx = -1, bestCands = null, bestCount = Infinity;
+    for (const idx of remaining) {
+      const cands = getUnusedCands(idx);
+      if (cands.length < bestCount) { bestCount = cands.length; bestIdx = idx; bestCands = cands; }
+    }
+    if (bestIdx < 0 || !bestCands.length) break;
+    const pick = bestCands[Math.floor(Math.random() * bestCands.length)];
+    const inp = getInput(bestIdx);
+    if (!inp) continue;
+    inp.value = pick.nom;
+    solveCount++;
+    solvedByBot[bestIdx] = true;
+    validateCell(bestIdx);
+  }
+}
+
+function checkVictory() {
+  if (!states.every(s => s === 'valid')) return;
+  const { total, totalHintPenalty, totalResetPenalty, totalWrongPenalty, botCells, cellScores } = computeScore();
+
+  const rareCells = cellScores.filter(c => c && !c.bot && c.rm >= 1.5);
+  const rareRows = rareCells.map(c => {
+    const stars = c.rm >= 3 ? '★★★' : c.rm >= 2 ? '★★' : '★';
+    return `<div class="score-row"><span>${stars} Pays rare (×${c.rm.toFixed(1)})</span><span>+${c.gross} pts</span></div>`;
+  }).join('');
+
+  const vs = document.getElementById('victory-score');
+  vs.innerHTML = `
+    <div class="score-total">&#127942; ${total} pts</div>
+    <div class="score-breakdown">
+      <div class="score-row" style="color:#888;font-size:0.85em"><span>Score = difficulté × rareté du pays</span><span></span></div>
+      ${rareRows}
+      ${totalWrongPenalty ? `<div class="score-row neg"><span>Réponses invalides</span><span>−${totalWrongPenalty} pts</span></div>` : ''}
+      ${totalHintPenalty  ? `<div class="score-row neg"><span>Indices utilisés</span><span>−${totalHintPenalty} pts</span></div>` : ''}
+      ${totalResetPenalty ? `<div class="score-row neg"><span>Pays retirés puis replacés</span><span>−${totalResetPenalty} pts</span></div>` : ''}
+      ${botCells ? `<div class="score-row neg"><span>${botCells} case(s) résolue(s) par solver</span><span>0 pt</span></div>` : ''}
+    </div>`;
+  const isRecord = saveBest(difficulty, total);
+  renderPersonalBest();
+  if (isRecord) {
+    vs.insertAdjacentHTML('afterbegin', `<div class="new-record-badge">🏆 Nouveau record !</div>`);
+  }
+  document.getElementById('victory').classList.add('show');
+}
+
+// ─── Indice textuel (cycle sur les animaux valides) ────────
+function giveHint(idx) {
+  if (states[idx] === 'valid') return;
+  const row = Math.floor(idx/3), col = idx%3;
+  const shown = hintStates[idx];
+
+  const usedNorms = new Set(
+    Array.from({length:9}, (_,i) => i)
+      .filter(i => i !== idx && states[i] === 'valid')
+      .map(i => normInput(getInput(i)?.value || ''))
+      .filter(Boolean)
+  );
+  const cands = cellCandidates(puzzle.rowRules[row], puzzle.colRules[col], getDiagRule(idx), getDiagRule2(idx))
+    .filter(p => !usedNorms.has(p._norm) && p.indice);
+
+  if (!cands.length) {
+    document.getElementById('msg'+idx).textContent = 'Aucun indice disponible';
+    return;
+  }
+
+  let pool = cands.filter(p => !shown.has(p._norm));
+  if (!pool.length) {
+    shown.clear();
+    pool = cands;
+  }
+
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  shown.add(pick._norm);
+
+  hintCount++;
+  hintPenalties[idx] += Math.ceil(cellBasePoints(idx) / 2);
+  updateScore();
+  document.getElementById('msg'+idx).textContent = `\u{1F4A1} ${pick.indice}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// POPUP « TOUTES LES RÉPONSES »
+// ═══════════════════════════════════════════════════════════
+let answersPopupIdx = -1;
+
+function showAnswersPopup(idx, anchorEl) {
+  // Toggle : refermer si déjà ouverte pour cette case
+  if (answersPopupIdx === idx) { closeAnswersPopup(); return; }
+  closeAnswersPopup();
+
+  const row = Math.floor(idx/3), col = idx%3;
+  const cands = cellCandidates(puzzle.rowRules[row], puzzle.colRules[col], getDiagRule(idx), getDiagRule2(idx))
+    .sort((a,b) => a.nom.localeCompare(b.nom, 'fr'));
+
+  answersPopupIdx = idx;
+
+  const popup = document.createElement('div');
+  popup.id = 'answers-popup';
+  popup.className = 'answers-popup';
+
+  const title = document.createElement('div');
+  title.className = 'ap-title';
+  title.textContent = `${cands.length} réponse${cands.length > 1 ? 's' : ''} possible${cands.length > 1 ? 's' : ''}`;
+  popup.appendChild(title);
+
+  const list = document.createElement('div');
+  list.className = 'ap-list';
+  cands.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'ap-item';
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.nom;
+    const flagBtn = document.createElement('button');
+    flagBtn.className = 'ap-wiki';
+    flagBtn.textContent = '🏳';
+    flagBtn.title = 'Voir le drapeau';
+    flagBtn.addEventListener('mouseenter', () => showFlagTooltip(p.nom, p.code, flagBtn));
+    flagBtn.addEventListener('mouseleave', hideWikiTooltip);
+    item.append(nameSpan, flagBtn);
+    list.appendChild(item);
+  });
+  popup.appendChild(list);
+
+  // Ancrage initial (sera ajusté après insertion)
+  popup.style.top = '-9999px';
+  popup.style.left = '-9999px';
+  document.body.appendChild(popup);
+
+  // Positionnement intelligent : sous le badge, ou au-dessus si pas de place
+  const anchor = anchorEl.getBoundingClientRect();
+  const ph = popup.offsetHeight;
+  const pw = popup.offsetWidth;
+  let top  = anchor.bottom + 4;
+  let left = anchor.left;
+  if (top + ph > window.innerHeight - 8) top = anchor.top - ph - 4;
+  if (left + pw > window.innerWidth  - 8) left = anchor.right - pw;
+  popup.style.top  = Math.max(8, top)  + 'px';
+  popup.style.left = Math.max(8, left) + 'px';
+}
+
+function closeAnswersPopup() {
+  document.getElementById('answers-popup')?.remove();
+  answersPopupIdx = -1;
+}
+
+// Fermer la popup en cliquant en dehors
+document.addEventListener('click', e => {
+  if (answersPopupIdx >= 0
+      && !e.target.closest('#answers-popup')
+      && !e.target.classList.contains('cell-count')) {
+    closeAnswersPopup();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// AUTOCOMPLÉTION
+// ═══════════════════════════════════════════════════════════
+let acCellIdx = -1;
+let acSelIdx  = -1;
+
+function hlNom(nom, q) {
+  if (!q) return escHtml(nom);
+  // Chercher q dans le nom normalisé sans accents (mais avec tirets)
+  const base = nom.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  const pos = base.indexOf(q);
+  if (pos < 0) return '<em>' + escHtml(nom) + '</em>';
+  return escHtml(nom.slice(0, pos)) + '<em>' + escHtml(nom.slice(pos, pos + q.length)) + '</em>' + escHtml(nom.slice(pos + q.length));
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Tooltip drapeau ───────────────────────────────────────
+function showFlagTooltip(nom, code, anchorEl) {
+  const tip = document.getElementById('wiki-tooltip');
+  tip.innerHTML = `<img src="https://flagcdn.com/w160/${code.toLowerCase()}.png" alt="${escHtml(nom)}" style="object-fit:contain"><div class="wt-name">${escHtml(nom)}</div>`;
+  placeWikiTooltip(tip, anchorEl);
+  tip.style.display = 'block';
+}
+
+function placeWikiTooltip(tip, anchorEl) {
+  const r = anchorEl.getBoundingClientRect();
+  const tw = 162;
+  let left = r.right + 8;
+  if (left + tw > window.innerWidth - 8) left = r.left - tw - 8;
+  let top = r.top - 10;
+  if (top + 220 > window.innerHeight - 8) top = window.innerHeight - 228;
+  if (top < 8) top = 8;
+  tip.style.left = left + 'px';
+  tip.style.top  = top + 'px';
+}
+
+function hideWikiTooltip() {
+  document.getElementById('wiki-tooltip').style.display = 'none';
+}
+
+function acShow(cellIdx, rawVal) {
+  const q = normInput(rawVal);
+  if (q.length < 3) { acHide(); return; }
+  // Pays déjà valides (pour les marquer)
+  const usedNorms = new Set(
+    Array.from({length:9}, (_,i) => i)
+      .filter(i => i !== cellIdx && states[i] === 'valid')
+      .map(i => normInput(getInput(i)?.value || ''))
+  );
+  // Correspondances : commence par q en premier, puis contient q
+  const startsWith = [], contains = [];
+  for (const p of COUNTRIES) {
+    if (usedNorms.has(p._norm)) continue;
+    if (p._norm.startsWith(q)) startsWith.push(p);
+    else if (p._norm.includes(q)) contains.push(p);
+  }
+  const matches = [...startsWith, ...contains].slice(0, 10);
+  if (!matches.length) { acHide(); return; }
+
+  const drop = document.getElementById('ac-drop');
+  drop.innerHTML = '';
+  acCellIdx = cellIdx;
+  acSelIdx  = -1;
+
+  matches.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'ac-item';
+    item.dataset.nom = p.nom;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.innerHTML = hlNom(p.nom, q);
+    item.appendChild(nameSpan);
+
+    const flagBtn = document.createElement('button');
+    flagBtn.className = 'ac-wiki';
+    flagBtn.textContent = '🏳';
+    flagBtn.title = 'Voir le drapeau';
+    flagBtn.addEventListener('mouseenter', () => showFlagTooltip(p.nom, p.code, flagBtn));
+    flagBtn.addEventListener('mouseleave', hideWikiTooltip);
+    flagBtn.addEventListener('mousedown', e => e.preventDefault());
+    item.appendChild(flagBtn);
+
+    item.addEventListener('mousedown', e => { if (e.target !== flagBtn) { e.preventDefault(); acPick(p.nom); } });
+    drop.appendChild(item);
+  });
+
+  const inp = getInput(cellIdx);
+  if (!inp) return;
+  const rect = inp.getBoundingClientRect();
+  drop.style.left  = rect.left + 'px';
+  drop.style.top   = (rect.bottom + 3) + 'px';
+  drop.style.width = Math.max(rect.width, 200) + 'px';
+  drop.style.display = 'block';
+}
+
+function acHide() {
+  document.getElementById('ac-drop').style.display = 'none';
+  hideWikiTooltip();
+  acSelIdx = -1;
+}
+
+function acMove(dir) {
+  const items = document.getElementById('ac-drop').querySelectorAll('.ac-item');
+  if (!items.length) return;
+  if (acSelIdx >= 0) items[acSelIdx].classList.remove('ac-sel');
+  acSelIdx = (acSelIdx + dir + items.length) % items.length;
+  items[acSelIdx].classList.add('ac-sel');
+  items[acSelIdx].scrollIntoView({ block:'nearest' });
+}
+
+function acPick(nom) {
+  acHide();
+  if (acCellIdx < 0) return;
+  const inp = getInput(acCellIdx);
+  if (inp) {
+    inp.value = nom;
+    validateCell(acCellIdx);
+    inp.focus();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PANNEAU LISTE DES ANIMAUX
+// ═══════════════════════════════════════════════════════════
+// COUNTRIES_SORTED est peuplé par loadCountries() au démarrage
+
+function openZoo() {
+  document.getElementById('zoo-overlay').classList.add('show');
+  const search = document.getElementById('zoo-search');
+  search.value = '';
+  renderZoo('');
+  setTimeout(() => search.focus(), 60);
+}
+
+function closeZoo() {
+  document.getElementById('zoo-overlay').classList.remove('show');
+  if (lastActiveIdx >= 0) {
+    const inp = getInput(lastActiveIdx);
+    if (inp) inp.focus();
+  }
+}
+
+function renderZoo(rawQ) {
+  const q = normInput(rawQ);
+  const list = COUNTRIES_SORTED;
+  const usedNorms = new Set(
+    Array.from({length:9}, (_,i) => i)
+      .filter(i => states[i] === 'valid')
+      .map(i => normInput(getInput(i)?.value || ''))
+  );
+
+  let results;
+  if (!q) {
+    results = list;
+  } else {
+    const sw = list.filter(a => a._norm.startsWith(q));
+    const inc = list.filter(a => !a._norm.startsWith(q) && a._norm.includes(q));
+    results = [...sw, ...inc];
+  }
+
+  document.getElementById('zoo-meta').textContent =
+    `${results.length} pays — cliquez pour l'insérer dans la case active`;
+
+  const container = document.getElementById('zoo-list');
+  container.innerHTML = '';
+  const shown = results.slice(0, 120);
+  shown.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'zoo-item' + (usedNorms.has(p._norm) ? ' used' : '');
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'zi-name';
+    nameEl.innerHTML = hlNom(p.nom, q);
+
+    const tag1 = document.createElement('span');
+    tag1.className = 'zi-tag classe';
+    tag1.textContent = p.continent;
+
+    item.append(nameEl, tag1);
+    item.addEventListener('click', () => {
+      closeZoo();
+      if (lastActiveIdx >= 0) {
+        const inp = getInput(lastActiveIdx);
+        if (inp) {
+          inp.value = p.nom;
+          validateCell(lastActiveIdx);
+          inp.focus();
+        }
+      }
+    });
+    container.appendChild(item);
+  });
+  if (results.length > 120) {
+    const more = document.createElement('div');
+    more.style.cssText = 'text-align:center;padding:10px;font-size:0.75em;color:#a8d5a8';
+    more.textContent = `…et ${results.length - 120} autres. Affinez la recherche.`;
+    container.appendChild(more);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECORD PERSONNEL (localStorage)
+// ═══════════════════════════════════════════════════════════
+const STORAGE_KEY = 'sudogeo_best';
+
+function loadBests() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveBest(diff, score) {
+  const bests = loadBests();
+  const prev  = bests[diff];
+  if (!prev || score > prev.score) {
+    bests[diff] = { score, date: new Date().toLocaleDateString('fr-FR') };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bests));
+    return true; // nouveau record
+  }
+  return false;
+}
+
+function renderPersonalBest() {
+  const el   = document.getElementById('personal-best');
+  if (!el) return;
+  const best = loadBests()[difficulty];
+  if (best) {
+    el.innerHTML = `🏆 Record (${difficulty}) : <span>${best.score} pts</span> — ${best.date}`;
+  } else {
+    el.innerHTML = `Aucun record enregistré en mode ${difficulty}`;
+  }
+}
+
+// ─── Démarrage ─────────────────────────────────────────────
+document.getElementById('zoo-search').addEventListener('input', e => renderZoo(e.target.value));
+loadCountries().then(() => { buildDiabRules(); newGame(); renderPersonalBest(); });
+</script>
+</body>
+</html>
