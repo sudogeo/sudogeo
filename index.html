@@ -826,7 +826,7 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
 <div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
   <div class="cl-panel" id="cl-panel"></div>
 </div>
-<button class="btn-changelog" onclick="openCl()">v1.6 — changelog</button>
+<button class="btn-changelog" onclick="openCl()">v1.7 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -2495,6 +2495,11 @@ async function submitPseudo() {
 // CHANGELOG
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
+  { v:'1.7', date:'29/05/2026', changes:[
+    'Score négatif possible si trop d\'erreurs sur une partie',
+    'Annuler une case retire exactement les points gagnés (sans pénalité supplémentaire)',
+    'Record personnel et classement mondial : uniquement si score > 0',
+  ]},
   { v:'1.6', date:'29/05/2026', changes:[
     'Diabolique : correction majeure — diagonale toujours présente',
     'Diabolique : au moins 1 case avec 1 seul pays valide (case forcée)',
