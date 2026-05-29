@@ -884,7 +884,7 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
   <button class="btn-diff moyen active" onclick="setDifficulty('moyen')">&#129418; Moyen</button>
   <button class="btn-diff difficile"  onclick="setDifficulty('difficile')">&#128293; Difficile</button>
   <button class="btn-diff avance"     onclick="setDifficulty('avance')">&#10038; Expert</button>
-  <button class="btn-diff expert2"      onclick="setDifficulty('expert2')">&#10022; Expert +</button>
+  <button class="btn-diff expert2"      onclick="setDifficulty('expert2')">&#127758; Globe-Trotter</button>
   <button class="btn-diff diabolique"  onclick="setDifficulty('diabolique')">&#128520; Diabolique</button>
 </div>
 <div class="controls">
@@ -918,7 +918,7 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
 <div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
   <div class="cl-panel" id="cl-panel"></div>
 </div>
-<button class="btn-changelog" onclick="openCl()">v2.0 — changelog</button>
+<button class="btn-changelog" onclick="openCl()">v2.1 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -1474,9 +1474,9 @@ function fillDiabPool() {
       DIAB_POOL_FILLING = false;
       return;
     }
-    const p = tryGenerateDiabolique(500);
+    const p = tryGenerateDiabolique(30); // court pour ne pas bloquer l'UI
     if (p) DIAB_POOL.push(p);
-    setTimeout(step, 20); // 20 ms de pause entre chaque grille → UI fluide
+    setTimeout(step, 30); // 30 ms de pause → max ~15 ms de blocage par cycle
   }
   setTimeout(step, 300); // démarre 300 ms après l'appel
 }
@@ -2022,7 +2022,7 @@ function checkVictory() {
   if (!states.every(s => s === 'valid')) return;
   const { total, totalHintPenalty, totalWrongPenalty, botCells, cellScores, rowBonus, colBonus, gridBonus } = computeScore();
 
-  const diffLabel = { facile:'Facile', moyen:'Moyen', difficile:'Difficile', avance:'Expert', expert2:'Expert +', diabolique:'Diabolique' };
+  const diffLabel = { facile:'Facile', moyen:'Moyen', difficile:'Difficile', avance:'Expert', expert2:'Globe-Trotter', diabolique:'Diabolique' };
   const mult = DIFF_MULT[difficulty] || 1.0;
 
   const rareCells = cellScores.filter(c => c && !c.bot && c.rm >= 1.5);
@@ -2647,7 +2647,7 @@ function renderPersonalBest() {
   const best  = loadBests()[difficulty];
   const stats = loadStats()[difficulty] || {};
   const diffLabel = { facile:'Facile', moyen:'Moyen', difficile:'Difficile',
-                      avance:'Expert', expert2:'Expert+', diabolique:'Diabolique' }[difficulty] || difficulty;
+                      avance:'Expert', expert2:'Globe-Trotter', diabolique:'Diabolique' }[difficulty] || difficulty;
   let html = '';
   if (best)
     html += `🏆 Record : <span>${best.score} pts</span> — ${best.date}`;
@@ -2663,7 +2663,7 @@ function renderPersonalBest() {
 // LEADERBOARD UI
 // ═══════════════════════════════════════════════════════════
 const DIFF_LABELS = { facile:'Facile', moyen:'Moyen', difficile:'Difficile',
-                      avance:'Expert', expert2:'Expert+', diabolique:'Diabolique' };
+                      avance:'Expert', expert2:'Globe-Trotter', diabolique:'Diabolique' };
 let _lbDiff = 'moyen';
 
 function openLeaderboard() {
@@ -2765,6 +2765,11 @@ async function submitPseudo() {
 // CHANGELOG
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
+  { v:'2.1', date:'29/05/2026', changes:[
+    'Correction : la validation de case ne bloque plus (freeze UI corrigé)',
+    'Mode "Expert +" renommé "Globe-Trotter"',
+    'Preview grille dans le classement : drapeaux des pays joués',
+  ]},
   { v:'2.0', date:'29/05/2026', changes:[
     'Diabolique : précalcul des paires de règles → génération ~50× plus rapide',
     'Diabolique : pool de 25 grilles prêtes, nouvelle grille instantanée',
