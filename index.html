@@ -1145,7 +1145,7 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
 <div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
   <div class="cl-panel" id="cl-panel"></div>
 </div>
-<button class="btn-changelog" onclick="openCl()">v2.3 — changelog</button>
+<button class="btn-changelog" onclick="openCl()">v2.4 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -1720,12 +1720,10 @@ function generatePuzzle(diff='moyen') {
       fillDiabPool(); // recharger le pool en fond
       return puzzle;
     }
-    // Pool vide : génération synchrone (1re fois ou fallback)
-    const r = tryGenerateDiabolique(2000);
+    // Pool vide : génération synchrone avec plus de tentatives
+    const r = tryGenerateDiabolique(5000);
     if (r) { fillDiabPool(); return r; }
-    const fb = tryGenerate('difficile', 4, 9, 800) || tryGenerate('moyen', 8, 15, 400);
-    if (fb) return { ...fb, isUnique: false };
-    return null;
+    return null; // signale l'échec proprement (newGame() retentera)
   }
   const { minMin, maxMin } = DIFF_CFG[diff] || DIFF_CFG.moyen;
   // Fallback progressif : respecte toujours au moins 60 % du seuil minimum
@@ -1765,9 +1763,27 @@ function setDifficulty(d) {
   document.querySelectorAll('.btn-diff').forEach(b => {
     b.classList.toggle('active', b.classList.contains(d));
   });
-  if (d === 'diabolique') fillDiabPool(); // démarre uniquement si l'utilisateur choisit ce mode
-  newGame();
+  if (d === 'diabolique') {
+    fillDiabPool();
+    _newGameWhenPoolReady();
+  } else {
+    newGame();
+  }
   renderPersonalBest();
+}
+
+function _newGameWhenPoolReady() {
+  if (difficulty !== 'diabolique') { newGame(); return; }
+  if (DIAB_POOL.length > 0) {
+    const el = document.getElementById('no-puzzle');
+    if (el && el.textContent.startsWith('⏳')) el.textContent = '';
+    newGame();
+    return;
+  }
+  if (!DIAB_POOL_FILLING) { newGame(); return; } // sécurité : pool inactif
+  const el = document.getElementById('no-puzzle');
+  if (el && !el.textContent) el.textContent = '⏳ Génération de la grille Diabolique…';
+  setTimeout(_newGameWhenPoolReady, 80);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1809,8 +1825,19 @@ function updateHintBtn() {
 // RENDU
 // ═══════════════════════════════════════════════════════════
 function newGame() {
-  puzzle = generatePuzzle(difficulty);
-  if (!puzzle) return;
+  // expert2 nécessite 8 groupes distincts : parfois aucune combinaison trouvée en un seul appel.
+  // On retente jusqu'à 6× pour absorber les échecs statistiques sans bloquer l'UI.
+  let p = null;
+  const maxRetries = difficulty === 'expert2' ? 6 : 3;
+  for (let i = 0; i < maxRetries && !p; i++) p = generatePuzzle(difficulty);
+  puzzle = p;
+
+  const noEl = document.getElementById('no-puzzle');
+  if (!puzzle) {
+    if (noEl) noEl.textContent = '⚠️ Impossible de générer une grille pour ce niveau, réessayez.';
+    return;
+  }
+  if (noEl) noEl.textContent = '';
   _currentGameCounted = false;
   states      = Array(9).fill(null);
   hintStates    = Array.from({length:9}, () => new Set());
@@ -3013,6 +3040,11 @@ async function submitPseudo() {
 // CHANGELOG
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
+  { v:'2.4', date:'29/05/2026', changes:[
+    'Correction : cliquer sur Globe-Trotter ou Diabolique génère toujours la bonne grille',
+    'Diabolique : attente du pool pré-calculé avant génération (plus de grille facile/difficile par erreur)',
+    'Globe-Trotter : jusqu\'à 6 tentatives de génération pour absorber les échecs statistiques',
+  ]},
   { v:'2.3', date:'29/05/2026', changes:[
     'Partage de grille : image PNG avec drapeaux, règles et score (bouton dans la fenêtre de victoire)',
     'Partage disponible uniquement si score ≥ 1 pt',
