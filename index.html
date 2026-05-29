@@ -1799,6 +1799,30 @@ function tryGenerateDiabolique(maxTries = 2000) {
 }
 
 // ── Diabolique 2×2 : une diagonale + case forçante ─────────────
+// Backtracking 2×2 : compte le nombre de solutions valides (s'arrête à maxCount)
+function countSolutions2x2(rowRules, colRules, diagRule, maxCount = 2) {
+  const cands = Array.from({length: 4}, (_, idx) => {
+    const row = Math.floor(idx/2), col = idx%2;
+    const dr = diagRule && (row === col) ? diagRule : null;
+    return cellCandidates(rowRules[row], colRules[col], dr, null);
+  });
+  const order = [0,1,2,3].sort((a,b) => cands[a].length - cands[b].length);
+  let count = 0;
+  const used = new Set();
+  function solve(step) {
+    if (step === 4) { count++; return count >= maxCount; }
+    for (const p of cands[order[step]]) {
+      if (used.has(p.code)) continue;
+      used.add(p.code);
+      if (solve(step + 1)) return true;
+      used.delete(p.code);
+    }
+    return false;
+  }
+  solve(0);
+  return count;
+}
+
 function tryGenerateQuick2x2Diab(maxTries = 4000) {
   const NOM = new Set(['len','lettre','pl','dl','nv']);
   for (let t = 0; t < maxTries; t++) {
@@ -1825,18 +1849,11 @@ function tryGenerateQuick2x2Diab(maxTries = 4000) {
     }
     if (!valid) continue;
 
-    // Au moins une case avec 1 seul pays qui apparaît aussi dans une autre case
-    let hasForcing = false;
-    for (let i = 0; i < 4 && !hasForcing; i++) {
-      if (cands[i].length !== 1) continue;
-      const fc = cands[i][0];
-      for (let j = 0; j < 4; j++) {
-        if (j !== i && cands[j].some(p => p.code === fc.code)) { hasForcing = true; break; }
-      }
-    }
-    if (!hasForcing) continue;
+    // Solution unique : exactement 1 assignation valide (pays distincts)
+    // Garantit qu'aucune case n'est insolvable et que la grille se résout par déduction
+    if (countSolutions2x2(rowRules, colRules, diagRule) !== 1) continue;
 
-    return { rowRules, colRules, diagRule, diagRule2: null, counts };
+    return { rowRules, colRules, diagRule, diagRule2: null, counts, isUnique: true };
   }
   return null;
 }
