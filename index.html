@@ -921,43 +921,31 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
 
 /* ── Install PWA button ───────────────────────────────────── */
 #install-wrap {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 5px; margin-bottom: 7px;
-  animation: fadeInDown 0.4s ease;
-}
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  position: fixed; top: 14px; right: 62px; z-index: 100;
 }
 .btn-install {
-  background: rgba(59,130,246,0.10);
-  border: 1px solid rgba(59,130,246,0.28);
-  color: #93c5fd;
-  border-radius: 20px;
-  padding: 5px 18px;
-  font-size: 0.76em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s, border-color 0.18s;
+  background: var(--surface); border: 1px solid var(--border-med);
+  border-radius: 50%; width: 40px; height: 40px;
+  padding: 0; font-size: 1.1em; line-height: 1; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  transition: transform 0.22s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .btn-install:hover {
-  background: rgba(59,130,246,0.20);
-  border-color: rgba(59,130,246,0.50);
+  background: var(--surface-2); border-color: var(--border-hi);
+  transform: scale(1.12); box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 .ios-hint {
-  font-size: 0.72em;
-  color: var(--text-3);
-  text-align: center;
-  line-height: 1.4;
+  position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--surface); border: 1px solid var(--border-med);
+  border-radius: 10px; padding: 8px 12px;
+  font-size: 0.72em; color: var(--text-2); line-height: 1.5;
+  white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  animation: fadeIn 0.18s ease;
 }
-.ios-hint strong { color: var(--text-2); }
-[data-theme="light"] .btn-install {
-  background: rgba(37,99,235,0.07);
-  border-color: rgba(37,99,235,0.25);
-  color: #2563eb;
-}
-[data-theme="light"] .btn-install:hover {
-  background: rgba(37,99,235,0.14);
+.ios-hint strong { color: var(--text-1); }
+@media (max-width: 620px) {
+  #install-wrap { top: 10px; right: 54px; }
+  .btn-install  { width: 36px; height: 36px; font-size: 1em; }
 }
 
 /* ── Share button ─────────────────────────────────────────── */
@@ -1246,6 +1234,12 @@ h1 { font-size: 1.72em; }
 </head>
 <body>
 
+<div id="install-wrap" style="display:none">
+  <button id="btn-install" class="btn-install" onclick="installApp()" title="Installer l'application" aria-label="Ajouter à l'écran d'accueil">&#128242;</button>
+  <div id="ios-hint" class="ios-hint" style="display:none">
+    Safari → Partager &#128228; →<br><strong>Sur l'écran d'accueil</strong>
+  </div>
+</div>
 <button class="theme-toggle" onclick="toggleTheme()" title="Mode clair / sombre" aria-label="Basculer mode clair/sombre"><span id="theme-toggle-icon">☀️</span></button>
 
 <div class="header-wrap">
@@ -1312,13 +1306,6 @@ h1 { font-size: 1.72em; }
     <div class="zoo-list" id="zoo-list"></div>
   </div>
 </div>
-<div id="install-wrap" style="display:none">
-  <button id="btn-install" class="btn-install" onclick="installApp()">&#128242; Ajouter en tant qu'appli</button>
-  <p id="ios-hint" class="ios-hint" style="display:none">
-    Safari → bouton Partager &#128229; → <strong>Sur l'écran d'accueil</strong>
-  </p>
-</div>
-
 <div class="score" id="score">0 / 9 cases validées</div>
 <div class="potential-score" id="potential-score"></div>
 <div class="personal-best" id="personal-best"></div>
@@ -3648,37 +3635,45 @@ async function doShareGrid() {
 }
 
 // ── PWA Install ─────────────────────────────────────────────
-let _installPrompt = null;
+let _installPrompt  = null;
 const _isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
 
-if (!_isStandalone) {
-  if (_isIOS) {
-    // iOS : pas d'événement beforeinstallprompt → montrer instructions Safari
-    document.getElementById('install-wrap').style.display = '';
-    document.getElementById('ios-hint').style.display     = '';
-  }
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    _installPrompt = e;
-    document.getElementById('install-wrap').style.display = '';
-  });
-}
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+});
+
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-wrap').style.display = 'none';
   _installPrompt = null;
 });
 
+function initInstallButton() {
+  if (_isStandalone) return; // déjà installé, on cache
+  document.getElementById('install-wrap').style.display = '';
+  if (_isIOS) document.getElementById('ios-hint').style.display = '';
+}
+
 function installApp() {
   if (_installPrompt) {
+    // Chrome Android/Desktop : prompt natif
     _installPrompt.prompt();
     _installPrompt.userChoice.then(({ outcome }) => {
       if (outcome === 'accepted')
         document.getElementById('install-wrap').style.display = 'none';
       _installPrompt = null;
     });
-  } else if (_isIOS) {
+  } else {
+    // Fallback : afficher/masquer les instructions manuelles
     const hint = document.getElementById('ios-hint');
+    const isAndroid = /android/i.test(navigator.userAgent);
+    if (!hint.dataset.set) {
+      hint.innerHTML = _isIOS
+        ? 'Safari → bouton Partager &#128229; → <strong>Sur l\'écran d\'accueil</strong>'
+        : 'Chrome → menu &#8942; → <strong>Ajouter à l\'écran d\'accueil</strong>';
+      hint.dataset.set = '1';
+    }
     hint.style.display = hint.style.display === 'none' ? '' : 'none';
   }
 }
@@ -3701,6 +3696,7 @@ initTheme();
 // ─── Démarrage ─────────────────────────────────────────────
 document.getElementById('zoo-search').addEventListener('input', e => renderZoo(e.target.value));
 loadCountries().then(() => { buildDiabRules(); newGame(); renderPersonalBest(); renderStats(); renderGlobalCount(); });
+initInstallButton();
 
 // ── Service Worker (PWA) ────────────────────────────────────
 if ('serviceWorker' in navigator) {
