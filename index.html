@@ -3150,9 +3150,15 @@ async function loadLbContent(diff) {
   }
 
   const medals = ['🥇','🥈','🥉'];
-  const diffCol  = isGlobal ? `<th>Mode</th>` : '';
+  const diffCol  = isGlobal ? `<th>Difficulté</th><th>Format</th>` : '';
   const diffCell = isGlobal
-    ? r => `<td style="color:#8496b0;font-size:0.82em">${DIFF_LABELS[r.difficulty]||r.difficulty}</td>` : () => '';
+    ? r => {
+        const rapide = r.difficulty?.endsWith('_r');
+        const base   = rapide ? r.difficulty.slice(0, -2) : r.difficulty;
+        return `<td style="color:#8496b0;font-size:0.82em">${DIFF_LABELS[base]||base}</td>
+                <td style="font-size:0.79em;white-space:nowrap">${rapide ? '⚡ Rapide' : '🗺️ Classique'}</td>`;
+      }
+    : () => '';
 
   const maxHint = isGlobal ? '' :
     `<p style="color:#465771;font-size:0.7em;text-align:center;padding:6px 4px 2px">
