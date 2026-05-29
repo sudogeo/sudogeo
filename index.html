@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sudogeo</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#07111e">
+<!-- iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sudogeo">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3607,6 +3617,12 @@ initTheme();
 // ─── Démarrage ─────────────────────────────────────────────
 document.getElementById('zoo-search').addEventListener('input', e => renderZoo(e.target.value));
 loadCountries().then(() => { buildDiabRules(); newGame(); renderPersonalBest(); renderStats(); renderGlobalCount(); });
+
+// ── Service Worker (PWA) ────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js')
+    .catch(err => console.warn('SW:', err));
+}
 </script>
 </body>
 </html>
