@@ -1123,7 +1123,7 @@ button:disabled { opacity: 0.28; cursor: not-allowed; transform: none !important
 <div class="cl-overlay" id="cl-overlay" onclick="if(event.target===this)closeCl()">
   <div class="cl-panel" id="cl-panel"></div>
 </div>
-<button class="btn-changelog" onclick="openCl()">v2.1 — changelog</button>
+<button class="btn-changelog" onclick="openCl()">v2.2 — changelog</button>
 
 <div class="zoo-overlay" id="zoo-overlay" onclick="if(event.target===this)closeZoo()">
   <div class="zoo-panel">
@@ -2978,6 +2978,11 @@ async function submitPseudo() {
 // CHANGELOG
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG = [
+  { v:'2.2', date:'29/05/2026', changes:[
+    'Thème clair : bouton ☀️/🌙 en haut à droite, préférence sauvegardée',
+    'Drapeaux 🌍🌎 de part et d\'autre du titre',
+    'Classement : score max théorique affiché même sans entrée',
+  ]},
   { v:'2.1', date:'29/05/2026', changes:[
     'Correction : la validation de case ne bloque plus (freeze UI corrigé)',
     'Mode "Expert +" renommé "Globe-Trotter"',
